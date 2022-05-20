@@ -63,6 +63,26 @@ __device__ Eigen::Array4f read_envmap(const T* __restrict__ envmap_data, const E
 	return result;
 }
 
+template <typename T>
+__device__ Eigen::Array4f read_envmap_equirectangular(const T* envmap_data, const Eigen::Vector2i envmap_resolution, const Eigen::Vector3f& dir) {
+
+	// See https://github.com/blender/blender/blob/594f47ecd2d5367ca936cf6fc6ec8168c2b360d0/intern/cycles/kernel/kernel_projection.h
+	float u = (atan2(dir.y(), dir.x())-M_PI)/(-2*M_PI);
+	float v = (acos(dir.z())-M_PI)/-M_PI;
+
+	Eigen::Vector2i pos(u*envmap_resolution.x(), v*envmap_resolution.y());
+
+	Eigen::Array4f result;
+	if (std::is_same<T, float>::value) {
+		result = *(Eigen::Array4f*)&envmap_data[(pos.x() + pos.y() * envmap_resolution.x()) * 4];
+	} else {
+		auto val = *(tcnn::vector_t<T, 4>*)&envmap_data[(pos.x() + pos.y() * envmap_resolution.x()) * 4];
+		result = {(float)val[0], (float)val[1], (float)val[2], (float)val[3]};
+	}
+
+	return result;
+}
+
 template <typename T, typename GRAD_T>
 __device__ void deposit_envmap_gradient(const tcnn::vector_t<T, 4>& value, GRAD_T* __restrict__ envmap_gradient, const Eigen::Vector2i envmap_resolution, const Eigen::Vector3f& dir) {
 	auto dir_cyl = dir_to_spherical_unorm({dir.z(), -dir.x(), dir.y()});

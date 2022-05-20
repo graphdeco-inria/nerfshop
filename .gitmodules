@@ -3,7 +3,7 @@
 	url = https://github.com/Tom94/pybind11
 [submodule "dependencies/eigen"]
 	path = dependencies/eigen
-	url = https://github.com/Tom94/eigen
+	url = https://github.com/Snosixtyboo/eigen
 [submodule "dependencies/glfw"]
 	path = dependencies/glfw
 	url = https://github.com/Tom94/glfw
@@ -15,10 +15,20 @@
 	url = https://github.com/Tom94/tinylogger
 [submodule "dependencies/tiny-cuda-nn"]
 	path = dependencies/tiny-cuda-nn
-	url = https://github.com/NVlabs/tiny-cuda-nn
+	url = git@gitlab.inria.fr:cjambon/tcnn-pyngp.git
+	branch = pyngp-api
 [submodule "dependencies/imgui"]
 	path = dependencies/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "dependencies/dlss"]
 	path = dependencies/dlss
 	url = https://github.com/NVIDIA/DLSS
+[submodule "dependencies/meshfix"]
+	path = dependencies/meshfix
+	url = git@gitlab.inria.fr:cjambon/meshfix.git
+[submodule "dependencies/zstr"]
+	path = dependencies/zstr
+	url = https://github.com/Tom94/zstr
+[submodule "dependencies/zlib"]
+	path = dependencies/zlib
+	url = https://github.com/Tom94/zlib

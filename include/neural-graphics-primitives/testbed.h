@@ -18,11 +18,14 @@
 #include <neural-graphics-primitives/camera_path.h>
 #include <neural-graphics-primitives/common.h>
 #include <neural-graphics-primitives/discrete_distribution.h>
+#include <neural-graphics-primitives/editing/edit_operator.h>
+#include <neural-graphics-primitives/marching_cubes.h>
 #include <neural-graphics-primitives/nerf.h>
 #include <neural-graphics-primitives/nerf_loader.h>
 #include <neural-graphics-primitives/render_buffer.h>
 #include <neural-graphics-primitives/sdf.h>
 #include <neural-graphics-primitives/trainable_buffer.cuh>
+//#include <neural-graphics-primitives/student_trainer.h>
 
 #include <tiny-cuda-nn/cuda_graph.h>
 #include <tiny-cuda-nn/random.h>
@@ -34,6 +37,10 @@
 #ifdef NGP_PYTHON
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#endif
+
+#ifdef NGP_TORCH
+#include <neural-graphics-primitives/torch_api.h>
 #endif
 
 struct GLFWwindow;
@@ -54,6 +61,7 @@ class TriangleOctree;
 class TriangleBvh;
 struct Triangle;
 class GLTexture;
+enum class ETestbedMode;
 
 class Testbed {
 public:
@@ -171,6 +179,7 @@ public:
 			float glow_y_cutoff,
 			int glow_mode,
 			const Eigen::Vector3f& light_dir,
+			bool apply_operators,
 			cudaStream_t stream
 		);
 
@@ -179,19 +188,55 @@ public:
 		RaysNerfSoa& rays_init() { return m_rays[0]; }
 		uint32_t n_rays_initialized() const { return m_n_rays_initialized; }
 
+		// Edit operators
+		void add_edit_operator(std::shared_ptr<EditOperator> edit_operator) {
+			m_active_edit_operator = m_edit_operators.size();
+			m_edit_operators.push_back(edit_operator);
+		}
+		void delete_edit_operator(int index) {
+			m_edit_operators.erase(m_edit_operators.begin() + index);
+			if (m_active_edit_operator >= index) {
+				m_active_edit_operator--;
+			}
+		}
+		void reset_edit_operators() {
+			m_edit_operators.clear();
+			m_active_edit_operator = -1;
+		}
+		std::vector<std::shared_ptr<EditOperator>>& edit_operators() {
+			return m_edit_operators;
+		}
+		int& active_edit_operator() {
+			return m_active_edit_operator;
+		}
+
 		void clear() {
 			m_scratch_alloc = {};
 		}
+		
+		int m_n_debug_operators = 10;
+
+		bool m_poisson_target = true;
+		//bool m_poisson_at_source = true;
 
 	private:
 		RaysNerfSoa m_rays[2];
 		RaysNerfSoa m_rays_hit;
 		precision_t* m_network_output;
+		precision_t* m_network_output_old;
 		float* m_network_input;
+		float* m_network_gradient;
+		SH9RGB* m_sh_boundary;
+
+		float* m_density_out_boundary;
+		float* m_density_residual_boundary;
 		tcnn::GPUMemory<uint32_t> m_hit_counter;
 		tcnn::GPUMemory<uint32_t> m_alive_counter;
 		uint32_t m_n_rays_initialized = 0;
 		tcnn::GPUMemoryArena::Allocation m_scratch_alloc;
+		std::vector<std::shared_ptr<EditOperator>> m_edit_operators;
+		int m_active_edit_operator = -1;
+		
 	};
 
 	class FiniteDifferenceNormalsApproximator {
@@ -231,16 +276,9 @@ public:
 
 	static constexpr float LOSS_SCALE = 128.f;
 
-	struct NetworkDims {
-		uint32_t n_input;
-		uint32_t n_output;
-		uint32_t n_pos;
-	};
-
 	NetworkDims network_dims_volume() const;
 	NetworkDims network_dims_sdf() const;
 	NetworkDims network_dims_image() const;
-	NetworkDims network_dims_nerf() const;
 
 	NetworkDims network_dims() const;
 
@@ -264,7 +302,7 @@ public:
 		const Eigen::Vector2f& screen_center,
 		cudaStream_t stream
 	);
-	void render_nerf(CudaRenderBuffer& render_buffer, const Eigen::Vector2i& max_res, const Eigen::Vector2f& focal_length, const Eigen::Matrix<float, 3, 4>& camera_matrix0, const Eigen::Matrix<float, 3, 4>& camera_matrix1, const Eigen::Vector4f& rolling_shutter, const Eigen::Vector2f& screen_center, cudaStream_t stream);
+	void render_nerf(NerfNetwork<precision_t>& network, CudaRenderBuffer& render_buffer, const Eigen::Vector2i& max_res, const Eigen::Vector2f& focal_length, const Eigen::Matrix<float, 3, 4>& camera_matrix0, const Eigen::Matrix<float, 3, 4>& camera_matrix1, const Eigen::Vector4f& rolling_shutter, const Eigen::Vector2f& screen_center, bool apply_operators, cudaStream_t stream);
 	void render_image(CudaRenderBuffer& render_buffer, cudaStream_t stream);
 	void render_frame(const Eigen::Matrix<float, 3, 4>& camera_matrix0, const Eigen::Matrix<float, 3, 4>& camera_matrix1, const Eigen::Vector4f& nerf_rolling_shutter, CudaRenderBuffer& render_buffer, bool to_srgb = true) ;
 	void visualize_nerf_cameras(const Eigen::Matrix<float, 4, 4>& world2proj);
@@ -301,9 +339,14 @@ public:
 	bool keyboard_event();
 	void generate_training_samples_sdf(Eigen::Vector3f* positions, float* distances, uint32_t n_to_generate, cudaStream_t stream, bool uniform_only);
 	void update_density_grid_nerf(float decay, uint32_t n_uniform_density_grid_samples, uint32_t n_nonuniform_density_grid_samples, cudaStream_t stream);
+	void update_density_grid_nerf_render(uint32_t n_iterations, bool reset_grid, cudaStream_t stream);
+	void update_density_grid_nerf_operator(uint32_t n_uniform_density_grid_samples, uint32_t n_nonuniform_density_grid_samples, bool reset_grid, cudaStream_t stream);
+	void reset_density_grid_nerf(cudaStream_t stream);
+	void update_density_grid_nerf_3d(bool initialize, cudaStream_t stream);
 	void update_density_grid_mean_and_bitfield(cudaStream_t stream);
-	void train_nerf(uint32_t target_batch_size, uint32_t n_training_steps, cudaStream_t stream);
+	void train_nerf(uint32_t target_batch_size, uint32_t n_training_steps, bool distill, cudaStream_t stream);
 	void train_nerf_step(uint32_t target_batch_size, uint32_t n_rays_per_batch, uint32_t* counter, uint32_t* compacted_counter, float* loss, cudaStream_t stream);
+	void train_nerf_step_distill(uint32_t target_batch_size, uint32_t n_rays_per_batch, uint32_t* counter, uint32_t* compacted_counter, float* loss, cudaStream_t stream);
 	void train_sdf(size_t target_batch_size, size_t n_steps, cudaStream_t stream);
 	void train_image(size_t target_batch_size, size_t n_steps, cudaStream_t stream);
 	void set_train(bool mtrain);
@@ -329,6 +372,16 @@ public:
 	size_t n_params();
 	size_t first_encoder_param();
 	size_t n_encoding_params();
+
+#ifdef NGP_TORCH
+
+	NerfNetworkModule<precision_t> get_nerf_network();
+	void prepare_for_torch(Module& nerf_network);
+	void prepare_for_native(Module& nerf_network);
+	void reset_density();
+	void update_density(bool initialize);
+	void reset_density_network();
+#endif
 
 #ifdef NGP_PYTHON
 	pybind11::dict compute_marching_cubes_mesh(Eigen::Vector3i res3d = Eigen::Vector3i::Constant(128), BoundingBox aabb = BoundingBox{Eigen::Vector3f::Zero(), Eigen::Vector3f::Ones()}, float thresh=2.5f);
@@ -360,8 +413,13 @@ public:
 	void set_fov(float val) ;
 	Eigen::Vector2f fov_xy() const ;
 	void set_fov_xy(const Eigen::Vector2f& val);
+	void export_snapshot(const std::string& filepath_string, bool include_optimizer_state, bool compress);
 	void save_snapshot(const std::string& filepath_string, bool include_optimizer_state);
 	void load_snapshot(const std::string& filepath_string);
+
+	// Load and save edit operators
+	void save_edits(const std::string& filepath_string);
+	void load_edits(const std::string& filepath_string);
 	CameraKeyframe copy_camera_to_keyframe() const;
 	void set_camera_from_keyframe(const CameraKeyframe& k);
 	void set_camera_from_time(float t);
@@ -375,34 +433,6 @@ public:
 
 	////////////////////////////////////////////////////////////////
 	// marching cubes related state
-	struct MeshState {
-		float thresh = 2.5f;
-		int res = 256;
-		bool unwrap = false;
-		float smooth_amount = 2048.f;
-		float density_amount = 128.f;
-		float inflate_amount = 1.f;
-		bool optimize_mesh = false;
-		tcnn::GPUMemory<Eigen::Vector3f> verts;
-		tcnn::GPUMemory<Eigen::Vector3f> vert_normals;
-		tcnn::GPUMemory<Eigen::Vector3f> vert_colors;
-		tcnn::GPUMemory<Eigen::Vector4f> verts_smoothed; // homogenous
-		tcnn::GPUMemory<uint32_t> indices;
-		tcnn::GPUMemory<Eigen::Vector3f> verts_gradient;
-		std::shared_ptr<TrainableBuffer<3, 1, float>> trainable_verts;
-		std::shared_ptr<tcnn::Optimizer<float>> verts_optimizer;
-
-		void clear() {
-			indices={};
-			verts={};
-			vert_normals={};
-			vert_colors={};
-			verts_smoothed={};
-			verts_gradient={};
-			trainable_verts=nullptr;
-			verts_optimizer=nullptr;
-		}
-	};
 	MeshState m_mesh;
 	bool m_want_repl = false;
 
@@ -410,6 +440,7 @@ public:
 	bool m_gather_histograms = false;
 
 	bool m_include_optimizer_state_in_snapshot = false;
+	bool m_compress_snapshot = true;
 	bool m_render_ground_truth = false;
 	bool m_train = false;
 	bool m_training_data_available = false;
@@ -417,6 +448,11 @@ public:
 	int m_max_spp = 0;
 	ETestbedMode m_testbed_mode = ETestbedMode::Sdf;
 	bool m_max_level_rand_training = false;
+
+	bool m_capture_current = false;
+	bool m_capture_by_image = false;
+	bool m_capture_this_view = false;
+	int m_running_view = 0;
 
 	// Rendering stuff
 	Eigen::Vector2i m_window_res = Eigen::Vector2i::Constant(0);
@@ -440,6 +476,25 @@ public:
 	Eigen::Vector3f m_autofocus_target = Eigen::Vector3f::Constant(0.5f);
 
 	CameraPath m_camera_path = {};
+
+	// Growing selection stuff
+	// bool m_project_pixels = false;
+	// bool m_grow_region = false;
+	// bool m_offset_reconstruction = false;
+	// EPcRenderMode m_pc_render_mode = EPcRenderMode::UniformColor;
+
+	//StudentTrainer m_student_trainer;
+	//int m_student_trainer_batch_size = 12;
+	//bool m_train_student = false;
+	//bool m_render_student = false;
+	//float m_student_loss_graph[256] = {};
+	//uint32_t m_student_loss_graph_samples = 0;
+
+	//bool m_display_student_debug = false;
+
+	bool m_enable_edits = true;
+
+	//bool m_display_teacher_samples = true;
 
 	Eigen::Vector3f m_up_dir = {0.0f, 1.0f, 0.0f};
 	Eigen::Vector3f m_sun_dir = Eigen::Vector3f::Ones().normalized();
@@ -512,7 +567,7 @@ public:
 				tcnn::GPUMemory<uint32_t> numsteps_counter_compacted; // number of steps each ray took
 				tcnn::GPUMemory<float> loss;
 
-				uint32_t rays_per_batch = 1<<12;
+				uint32_t rays_per_batch = 1<<16;
 				uint32_t n_rays_total = 0;
 				uint32_t measured_batch_size = 0;
 				uint32_t measured_batch_size_before_compaction = 0;
@@ -566,6 +621,8 @@ public:
 		} training = {};
 
 		tcnn::GPUMemory<float> density_grid; // NERF_GRIDSIZE()^3 grid of EMA smoothed densities from the network
+		tcnn::GPUMemory<float> backup_density_grid; // NERF_GRIDSIZE()^3 grid of EMA smoothed densities from the network
+
 		tcnn::GPUMemory<uint8_t> density_grid_bitfield;
 		uint8_t* get_density_grid_bitfield_mip(uint32_t mip);
 		tcnn::GPUMemory<float> density_grid_mean;
@@ -735,9 +792,25 @@ public:
 	bool m_single_view = true; // Whether a single neuron is visualized, or all in a tiled grid
 	float m_picture_in_picture_res = 0.f; // if non zero, requests a small second picture :)
 
+
 	bool m_imgui_enabled = true; // tab to toggle
+
+	struct ImGuiVars {
+		static const uint32_t MAX_PATH_LEN = 1024;
+
+		bool enabled = true; // tab to toggle
+		char cam_path_path[MAX_PATH_LEN] = "cam.json";
+		char extrinsics_path[MAX_PATH_LEN] = "extrinsics.json";
+		char mesh_path[MAX_PATH_LEN] = "base.obj";
+		char snapshot_path[MAX_PATH_LEN] = "base.ingp";
+		char video_path[MAX_PATH_LEN] = "video.mp4";
+	} m_imgui;
+
+
 	bool m_visualize_unit_cube = false;
 	bool m_snap_to_pixel_centers = false;
+
+	bool m_distill = false;
 
 	// CUDA stuff
 	cudaStream_t m_training_stream;
@@ -797,6 +870,7 @@ public:
 		Eigen::Vector2i resolution;
 	} m_distortion;
 	std::shared_ptr<NerfNetwork<precision_t>> m_nerf_network;
+	std::shared_ptr<NerfNetwork<precision_t>> m_backup_network;
 };
 
 NGP_NAMESPACE_END

@@ -37,7 +37,7 @@ NGP_NAMESPACE_BEGIN
 
 static constexpr uint32_t MARCH_ITER = 10000;
 
-Testbed::NetworkDims Testbed::network_dims_sdf() const {
+NetworkDims Testbed::network_dims_sdf() const {
 	NetworkDims dims;
 	dims.n_input = 3;
 	dims.n_output = 1;
@@ -987,7 +987,7 @@ void Testbed::render_sdf(
 void Testbed::load_mesh() {
 	std::vector<Vector3f> vertices;
 	if (equals_case_insensitive(m_data_path.extension(), "obj")) {
-		vertices = load_obj(m_data_path.str());
+		// vertices = load_obj(m_data_path.str());
 	} else if (equals_case_insensitive(m_data_path.extension(), "stl")) {
 		FILE* f = fopen(m_data_path.str().c_str(), "rb");
 		if (!f) {

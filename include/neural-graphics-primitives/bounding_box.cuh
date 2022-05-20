@@ -43,6 +43,11 @@ NGP_HOST_DEVICE inline void project(Eigen::Vector3f points[N_POINTS], const Eige
 struct BoundingBox {
 	NGP_HOST_DEVICE BoundingBox() {}
 
+	NGP_HOST_DEVICE BoundingBox(const Eigen::Vector3f& center, const float size) {
+		min = center - size / 2. * Eigen::Vector3f(1.f, 1.f, 1.f);
+		max = center + size / 2. * Eigen::Vector3f(1.f, 1.f, 1.f);
+	}
+
 	NGP_HOST_DEVICE BoundingBox(const Eigen::Vector3f& a, const Eigen::Vector3f& b) : min{a}, max{b} {}
 
 	NGP_HOST_DEVICE explicit BoundingBox(const Triangle& tri) {
@@ -74,6 +79,11 @@ struct BoundingBox {
 		max = max.cwiseMax(point);
 	}
 
+	NGP_HOST_DEVICE void translate(const Eigen::Vector3f& translation) {
+		min += translation;
+		max += translation;
+	}
+
 	NGP_HOST_DEVICE void inflate(float amount) {
 		min -= Eigen::Vector3f::Constant(amount);
 		max += Eigen::Vector3f::Constant(amount);
@@ -90,6 +100,13 @@ struct BoundingBox {
 	NGP_HOST_DEVICE Eigen::Vector3f center() const {
 		return 0.5f * (max + min);
 	}
+	
+	NGP_HOST_DEVICE void set_center(const Eigen::Vector3f& new_center) {
+		Eigen::Vector3f old_center = center();
+		min += new_center - old_center;
+		max += new_center - old_center;
+	}
+
 
 	NGP_HOST_DEVICE BoundingBox intersection(const BoundingBox& other) const {
 		BoundingBox result = *this;
@@ -213,7 +230,14 @@ struct BoundingBox {
 		return (max.array() < min.array()).any();
 	}
 
-	NGP_HOST_DEVICE bool contains(const Eigen::Vector3f& p) const {
+	virtual NGP_HOST_DEVICE bool contains(const Eigen::Vector3f& p) const {
+		return
+			p.x() >= min.x() && p.x() <= max.x() &&
+			p.y() >= min.y() && p.y() <= max.y() &&
+			p.z() >= min.z() && p.z() <= max.z();
+	}
+
+	NGP_HOST_DEVICE bool contains_base(const Eigen::Vector3f& p) const {
 		return
 			p.x() >= min.x() && p.x() <= max.x() &&
 			p.y() >= min.y() && p.y() <= max.y() &&
@@ -243,6 +267,11 @@ struct BoundingBox {
 		v[5] = {max.x(), min.y(), max.z()};
 		v[6] = {max.x(), max.y(), min.z()};
 		v[7] = {max.x(), max.y(), max.z()};
+	}
+
+	NGP_HOST_DEVICE void warp_box(const BoundingBox& aabb) {
+        min = aabb.relative_pos(min);
+		max = aabb.relative_pos(max);
 	}
 
 	Eigen::Vector3f min = Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity());

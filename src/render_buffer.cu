@@ -468,7 +468,7 @@ __global__ void overlay_false_color_kernel(Vector2i resolution, Vector2i trainin
 	surf2Dwrite(to_float4(color), surface, x * sizeof(float4), y);
 }
 
-__global__ void tonemap_kernel(Vector2i resolution, float exposure, Array4f background_color, Array4f* accumulate_buffer, EColorSpace color_space, EColorSpace output_color_space, ETonemapCurve tonemap_curve, bool clamp_output_color, cudaSurfaceObject_t surface) {
+__global__ void tonemap_kernel(Vector2i resolution, float exposure, Array4f background_color, Array4f* accumulate_buffer, EColorSpace color_space, EColorSpace output_color_space, ETonemapCurve tonemap_curve, bool clamp_output_color, cudaSurfaceObject_t surface, Vector4f* lopi) {
 	uint32_t x = threadIdx.x + blockDim.x * blockIdx.x;
 	uint32_t y = threadIdx.y + blockDim.y * blockIdx.y;
 
@@ -495,6 +495,9 @@ __global__ void tonemap_kernel(Vector2i resolution, float exposure, Array4f back
 	}
 
 	surf2Dwrite(to_float4(color), surface, x * sizeof(float4), y);
+
+	if (lopi)
+		lopi[y * resolution.x() + x] = color;
 }
 
 __global__ void dlss_splat_kernel(
@@ -556,7 +559,7 @@ void CudaRenderBuffer::accumulate(float exposure, cudaStream_t stream) {
 	++m_spp;
 }
 
-void CudaRenderBuffer::tonemap(float exposure, const Array4f& background_color, EColorSpace output_color_space, cudaStream_t stream) {
+void CudaRenderBuffer::tonemap(float exposure, const Array4f& background_color, EColorSpace output_color_space, cudaStream_t stream, Eigen::Vector4f* lopi) {
 	assert(m_dlss || out_resolution() == in_resolution());
 
 	auto res = m_dlss ? in_resolution() : out_resolution();
@@ -571,7 +574,8 @@ void CudaRenderBuffer::tonemap(float exposure, const Array4f& background_color, 
 		output_color_space,
 		m_tonemap_curve,
 		m_dlss && output_color_space == EColorSpace::SRGB,
-		m_dlss ? m_dlss->frame() : surface()
+		m_dlss ? m_dlss->frame() : surface(),
+		lopi
 	);
 
 	if (m_dlss) {

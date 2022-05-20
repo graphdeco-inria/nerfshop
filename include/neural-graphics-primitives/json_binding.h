@@ -16,59 +16,65 @@
 #pragma once
 
 #include <neural-graphics-primitives/common.h>
+#include <neural-graphics-primitives/common_nerf.h>
 #include <neural-graphics-primitives/nerf_loader.h>
 
 #include <json/json.hpp>
 
+#include <vector>
+#include <queue>
+
+namespace Eigen {
+	// Conversion between eigen and json
+	template <typename Derived>
+	void to_json(nlohmann::json& j, const Eigen::MatrixBase<Derived>& mat) {
+ 		for (int row = 0; row < mat.rows(); ++row) {
+			if (mat.cols() == 1) {
+				j.push_back(mat(row));
+			} else {
+				nlohmann::json column = nlohmann::json::array();
+				for (int col = 0; col < mat.cols(); ++col) {
+					column.push_back(mat(row, col));
+				}
+				j.push_back(column);
+			}
+		}
+	}
+
+	template <typename Derived>
+	void from_json(const nlohmann::json& j, Eigen::MatrixBase<Derived>& mat) {
+		for (std::size_t row = 0; row < j.size(); ++row) {
+			const auto& jrow = j.at(row);
+			if (jrow.is_array()) {
+				for (std::size_t col = 0; col < jrow.size(); ++col) {
+					const auto& value = jrow.at(col);
+					mat(row, col) = value.get<typename Eigen::MatrixBase<Derived>::Scalar>();
+				}
+			} else {
+				mat(row) = jrow.get<typename Eigen::MatrixBase<Derived>::Scalar>();
+			}
+		}
+	}
+	
+	template <typename Derived>
+	void to_json(nlohmann::json& j, const Eigen::QuaternionBase<Derived>& q) {
+		j.push_back(q.w());
+		j.push_back(q.x());
+		j.push_back(q.y());
+		j.push_back(q.z());
+	}
+
+	template <typename Derived>
+	void from_json(const nlohmann::json& j, Eigen::QuaternionBase<Derived>& q) {
+		using Scalar = typename Eigen::QuaternionBase<Derived>::Scalar;
+		q.w() = j.at(0).get<Scalar>();
+		q.x() = j.at(1).get<Scalar>();
+		q.y() = j.at(2).get<Scalar>();
+		q.z() = j.at(3).get<Scalar>();
+	}
+}
+
 NGP_NAMESPACE_BEGIN
-
-// Conversion between eigen and json
-template <typename Derived>
-void to_json(nlohmann::json& j, const Eigen::MatrixBase<Derived>& mat) {
-	for (int row = 0; row < mat.rows(); ++row) {
-		if (mat.cols() == 1) {
-			j.push_back(mat(row));
-		} else {
-			nlohmann::json column = nlohmann::json::array();
-			for (int col = 0; col < mat.cols(); ++col) {
-				column.push_back(mat(row, col));
-			}
-			j.push_back(column);
-		}
-	}
-}
-
-template <typename Derived>
-void from_json(const nlohmann::json& j, Eigen::MatrixBase<Derived>& mat) {
-	for (std::size_t row = 0; row < j.size(); ++row) {
-		const auto& jrow = j.at(row);
-		if (jrow.is_array()) {
-			for (std::size_t col = 0; col < jrow.size(); ++col) {
-				const auto& value = jrow.at(col);
-				mat(row, col) = value.get<typename Eigen::MatrixBase<Derived>::Scalar>();
-			}
-		} else {
-			mat(row) = jrow.get<typename Eigen::MatrixBase<Derived>::Scalar>();
-		}
-	}
-}
-
-template <typename Derived>
-void to_json(nlohmann::json& j, const Eigen::QuaternionBase<Derived>& q) {
-	j.push_back(q.w());
-	j.push_back(q.x());
-	j.push_back(q.y());
-	j.push_back(q.z());
-}
-
-template <typename Derived>
-void from_json(const nlohmann::json& j, Eigen::QuaternionBase<Derived>& q) {
-	using Scalar = typename Eigen::QuaternionBase<Derived>::Scalar;
-	q.w() = j.at(0).get<Scalar>();
-	q.x() = j.at(1).get<Scalar>();
-	q.y() = j.at(2).get<Scalar>();
-	q.z() = j.at(3).get<Scalar>();
-}
 
 inline void to_json(nlohmann::json& j, const BoundingBox& box) {
 	to_json(j["min"], box.min);
@@ -191,6 +197,124 @@ inline void from_json(const nlohmann::json& j, NerfDataset& dataset) {
 		dataset.wants_importance_sampling = j.at("wants_importance_sampling");
 	} else {
 		dataset.wants_importance_sampling = true;
+	}
+}
+
+inline void to_json(nlohmann::json& j, const SH9RGB& mat) {
+	for (int row = 0; row < mat.rows(); ++row) {
+		if (mat.cols() == 1) {
+			j.push_back(mat(row));
+		} else {
+			nlohmann::json column = nlohmann::json::array();
+			for (int col = 0; col < mat.cols(); ++col) {
+				column.push_back(mat(row, col));
+			}
+			j.push_back(column);
+		}
+	}
+}
+
+inline void from_json(const nlohmann::json& j, SH9RGB& mat) {
+	for (std::size_t row = 0; row < j.size(); ++row) {
+		const auto& jrow = j.at(row);
+		if (jrow.is_array()) {
+			for (std::size_t col = 0; col < jrow.size(); ++col) {
+				const auto& value = jrow.at(col);
+				mat(row, col) = value.get<float>();
+			}
+		} else {
+			mat(row) = jrow.get<float>();
+		}
+	}
+}
+
+inline void to_json(nlohmann::json& j, const std::vector<Eigen::Vector3f>& vec) {
+	for (auto mat: vec) {
+		nlohmann::json j_mat;
+		to_json(j_mat, mat);
+		j.push_back(j_mat);
+	}
+}
+
+inline void from_json(const nlohmann::json& j, std::vector<Eigen::Vector3f>& vec) {
+	for (std::size_t row = 0; row < j.size(); ++row) {
+		const auto& jrow = j.at(row);
+		Eigen::Vector3f mat_row;
+		from_json(jrow, mat_row);
+		vec.push_back(mat_row);	
+	}
+}
+
+inline void to_json(nlohmann::json& j, const std::vector<SH9RGB>& vec) {
+	for (auto mat: vec) {
+		nlohmann::json j_mat;
+		to_json(j_mat, mat);
+		j.push_back(j_mat);
+	}
+}
+
+inline void from_json(const nlohmann::json& j, std::vector<SH9RGB>& vec) {
+	for (std::size_t row = 0; row < j.size(); ++row) {
+		const auto& jrow = j.at(row);
+		SH9RGB mat_row;
+		from_json(jrow, mat_row);
+		vec.push_back(mat_row);	
+	}
+}
+
+inline void to_json(nlohmann::json& j, const std::vector<FeatureVector>& vec) {
+	for (auto mat: vec) {
+		nlohmann::json j_mat;
+		to_json(j_mat, mat);
+		j.push_back(j_mat);
+	}
+}
+
+inline void from_json(const nlohmann::json& j, std::vector<FeatureVector>& vec) {
+	for (std::size_t row = 0; row < j.size(); ++row) {
+		const auto& jrow = j.at(row);
+		FeatureVector mat_row;
+		from_json(jrow, mat_row);
+		vec.push_back(mat_row);	
+	}
+}
+
+template<typename T, class = typename std::enable_if<std::is_integral<T>::value>::type>
+inline void to_json(nlohmann::json& j, const std::vector<T>& vec) {
+	for (auto i: vec) {
+		j.push_back(i);
+	}
+}
+
+template<typename T, class = typename std::enable_if<std::is_integral<T>::value>::type>
+inline void from_json(const nlohmann::json& j, std::vector<T>& vec) {
+	for (std::size_t row = 0; row < j.size(); ++row) {
+		vec.push_back(j.at(row));	
+	}
+}
+
+inline void to_json(nlohmann::json& j, const std::vector<float>& vec) {
+	for (auto i: vec) {
+		j.push_back(i);
+	}
+}
+
+inline void from_json(const nlohmann::json& j, std::vector<float>& vec) {
+	for (std::size_t row = 0; row < j.size(); ++row) {
+		vec.push_back(j.at(row));	
+	}
+}
+
+
+inline void to_json(nlohmann::json& j, const std::vector<std::vector<float>>& vec) {
+	for (auto v: vec) {
+		j.push_back(v);
+	}
+}
+
+inline void from_json(const nlohmann::json& j, std::vector<std::vector<float>>& vec) {
+	for (std::size_t row = 0; row < j.size(); ++row) {
+		vec.push_back(j.at(row));	
 	}
 }
 

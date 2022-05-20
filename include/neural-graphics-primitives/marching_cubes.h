@@ -14,9 +14,45 @@
 
 #pragma once
 
+#include <neural-graphics-primitives/bounding_box.cuh>
+#include <neural-graphics-primitives/trainable_buffer.cuh>
+
 #include <tiny-cuda-nn/common.h>
+#include <tiny-cuda-nn/gpu_memory.h>
+#include <tiny-cuda-nn/optimizer.h>
 
 NGP_NAMESPACE_BEGIN
+
+////////////////////////////////////////////////////////////////
+// marching cubes related state
+struct MeshState {
+	float thresh = 2.5f;
+	int res = 256;
+	bool unwrap = false;
+	float smooth_amount = 2048.f;
+	float density_amount = 128.f;
+	float inflate_amount = 1.f;
+	bool optimize_mesh = false;
+	tcnn::GPUMemory<Eigen::Vector3f> verts;
+	tcnn::GPUMemory<Eigen::Vector3f> vert_normals;
+	tcnn::GPUMemory<Eigen::Vector3f> vert_colors;
+	tcnn::GPUMemory<Eigen::Vector4f> verts_smoothed; // homogenous
+	tcnn::GPUMemory<uint32_t> indices;
+	tcnn::GPUMemory<Eigen::Vector3f> verts_gradient;
+	std::shared_ptr<TrainableBuffer<3, 1, float>> trainable_verts;
+	std::shared_ptr<tcnn::Optimizer<float>> verts_optimizer;
+
+	void clear() {
+		indices={};
+		verts={};
+		vert_normals={};
+		vert_colors={};
+		verts_smoothed={};
+		verts_gradient={};
+		trainable_verts=nullptr;
+		verts_optimizer=nullptr;
+	}
+};
 
 Eigen::Vector3i get_marching_cubes_res(uint32_t res_1d, const BoundingBox &aabb);
 

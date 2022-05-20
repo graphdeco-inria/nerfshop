@@ -20,11 +20,6 @@
 
 NGP_NAMESPACE_BEGIN
 
-// size of the density/occupancy grid in number of cells along an axis.
-inline constexpr __device__ uint32_t NERF_GRIDSIZE() {
-	return 128;
-}
-
 struct NerfPayload {
 	Eigen::Vector3f origin;
 	Eigen::Vector3f dir;
@@ -44,15 +39,17 @@ struct RaysNerfSoa {
 	}
 #endif
 
-	void set(Eigen::Array4f* rgba, float* depth, NerfPayload* payload, size_t size) {
+	void set(Eigen::Array4f* rgba, float* depth, Eigen::Array3f* normal, NerfPayload* payload, size_t size) {
 		this->rgba = rgba;
 		this->depth = depth;
+		this->normal = normal;
 		this->payload = payload;
 		this->size = size;
 	}
 
 	Eigen::Array4f* rgba;
 	float* depth;
+	Eigen::Array3f* normal;
 	NerfPayload* payload;
 	size_t size;
 };

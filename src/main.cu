@@ -82,6 +82,13 @@ int main(int argc, char** argv) {
 		{"snapshot"},
 	};
 
+	ValueFlag<string> edits_flag{
+		parser,
+		"EDITS",
+		"Optional edits to load upon startup.",
+		{"edits"},
+	};
+
 	ValueFlag<uint32_t> width_flag{
 		parser,
 		"WIDTH",
@@ -214,6 +221,17 @@ int main(int argc, char** argv) {
 
 			testbed.reload_network_from_file(network_config_path.str());
 			testbed.m_train = !no_train_flag;
+		}
+
+		if (edits_flag && mode == ETestbedMode::Nerf) {
+			// Load edits from a json config file if one is provided
+			fs::path edits_path = get(snapshot_flag);
+			if (!edits_path.exists()) {
+				tlog::error() << "Edits path " << edits_path << " does not exist.";
+				return 1;
+			}
+
+			testbed.load_edits(edits_path.str());
 		}
 
 		bool gui = !no_gui_flag;

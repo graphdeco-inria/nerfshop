@@ -16,6 +16,7 @@
 #pragma once
 
 #include <neural-graphics-primitives/common.h>
+#include <neural-graphics-primitives/bounding_box.cuh>
 #include <neural-graphics-primitives/random_val.cuh>
 
 #include <tiny-cuda-nn/common.h>

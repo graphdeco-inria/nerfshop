@@ -22,7 +22,7 @@ from scenes import scenes_nerf, scenes_image, scenes_sdf, scenes_volume, setup_c
 
 from tqdm import tqdm
 
-import pyngp as ngp # noqa
+import pyngp_bindings as ngp # noqa
 
 
 def parse_args():
@@ -32,10 +32,12 @@ def parse_args():
 	parser.add_argument("--mode", default="", const="nerf", nargs="?", choices=["nerf", "sdf", "image", "volume"], help="Mode can be 'nerf', 'sdf', or 'image' or 'volume'. Inferred from the scene if unspecified.")
 	parser.add_argument("--network", default="", help="Path to the network config. Uses the scene's default if unspecified.")
 
-	parser.add_argument("--load_snapshot", default="", help="Load this snapshot before training. recommended extension: .msgpack")
-	parser.add_argument("--save_snapshot", default="", help="Save this snapshot after training. recommended extension: .msgpack")
 
-	parser.add_argument("--nerf_compatibility", action="store_true", help="Matches parameters with original NeRF. Can cause slowness and worse results on some scenes.")
+	parser.add_argument("--load_snapshot", "--snapshot", default="", help="Load this snapshot before training. recommended extension: .ingp/.msgpack")
+	parser.add_argument("--save_snapshot", default="", help="Save this snapshot after training. recommended extension: .ingp/.msgpack")
+
+
+	parser.add_argument("--nerf_compatibility", action="store_true", help="Matches parameters with original NeRF. Can cause slowness and worse results on some scenes, but helps with high PSNR on synthetic scenes.")
 	parser.add_argument("--test_transforms", default="", help="Path to a nerf style transforms json from which we will compute PSNR.")
 	parser.add_argument("--near_distance", default=-1, type=float, help="set the distance from the camera at which training rays start for nerf. <0 means use ngp default")
 
@@ -43,6 +45,13 @@ def parse_args():
 	parser.add_argument("--screenshot_frames", nargs="*", help="Which frame(s) to take screenshots of.")
 	parser.add_argument("--screenshot_dir", default="", help="Which directory to output screenshots to.")
 	parser.add_argument("--screenshot_spp", type=int, default=16, help="Number of samples per pixel in screenshots.")
+
+	parser.add_argument("--video_camera_path", default="", help="The camera path to render.")
+	parser.add_argument("--video_camera_smoothing", action="store_true", help="Applies additional smoothing to the camera trajectory with the caveat that the endpoint of the camera path may not be reached.")
+	parser.add_argument("--video_fps", type=int, default=60, help="Number of frames per second.")
+	parser.add_argument("--video_n_seconds", type=int, default=1, help="Number of seconds the rendered video should be long.")
+	parser.add_argument("--video_spp", type=int, default=8, help="Number of samples per pixel. A larger number means less noise, but slower rendering.")
+	parser.add_argument("--video_output", type=str, default="video.mp4", help="Filename of the output video.")
 
 	parser.add_argument("--save_mesh", default="", help="Output a marching-cubes based mesh from the NeRF or SDF model. Supports OBJ and PLY format.")
 	parser.add_argument("--marching_cubes_res", default=256, type=int, help="Sets the resolution for the marching cubes grid.")
@@ -115,7 +124,11 @@ if __name__ == "__main__":
 
 
 	if args.load_snapshot:
-		print("Loading snapshot ", args.load_snapshot)
+
+		scene_info = get_scene(args.load_snapshot)
+		if scene_info is not None:
+			args.load_snapshot = default_snapshot_filename(scene_info)
+
 		testbed.load_snapshot(args.load_snapshot)
 	else:
 		testbed.reload_network_from_file(network)
@@ -197,7 +210,6 @@ if __name__ == "__main__":
 				old_training_step = testbed.training_step
 
 	if args.save_snapshot:
-		print("Saving snapshot ", args.save_snapshot)
 		testbed.save_snapshot(args.save_snapshot, False)
 
 	if args.test_transforms:
@@ -325,3 +337,20 @@ if __name__ == "__main__":
 
 
 
+	if args.video_camera_path:
+		testbed.load_camera_path(args.video_camera_path)
+
+		resolution = [args.width or 1920, args.height or 1080]
+		n_frames = args.video_n_seconds * args.video_fps
+
+		if "tmp" in os.listdir():
+			shutil.rmtree("tmp")
+		os.makedirs("tmp")
+
+		for i in tqdm(list(range(min(n_frames, n_frames+1))), unit="frames", desc=f"Rendering video"):
+			testbed.camera_smoothing = args.video_camera_smoothing and i > 0
+			frame = testbed.render(resolution[0], resolution[1], args.video_spp, True, float(i)/n_frames, float(i + 1)/n_frames, args.video_fps, shutter_fraction=0.5)
+			write_image(f"tmp/{i:04d}.jpg", np.clip(frame * 2**args.exposure, 0.0, 1.0), quality=100)
+
+		os.system(f"ffmpeg -y -framerate {args.video_fps} -i tmp/%04d.jpg -c:v libx264 -pix_fmt yuv420p {args.video_output}")
+		shutil.rmtree("tmp")

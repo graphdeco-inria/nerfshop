@@ -14,6 +14,7 @@
 
 #include <neural-graphics-primitives/testbed.h>
 #include <neural-graphics-primitives/thread_pool.h>
+#include <neural-graphics-primitives/nerf_network_full.h>
 
 #include <json/json.hpp>
 
@@ -218,7 +219,83 @@ py::array_t<float> Testbed::screenshot(bool linear) const {
 #endif
 }
 
-PYBIND11_MODULE(pyngp, m) {
+#include <neural-graphics-primitives/differentiable_object.h>
+#include <neural-graphics-primitives/torch_api.h>
+
+NerfNetworkModule<precision_t> Testbed::get_nerf_network() {
+	return NerfNetworkModule<precision_t>{(new tcnn::cpp::DifferentiableNerfObject<precision_t>{m_nerf_network})};
+}
+
+
+NGP_NAMESPACE_END
+
+#include <tiny-cuda-nn/trainer.h>
+
+void ngp::Testbed::prepare_for_native(Module& nerf_network) {
+	m_trainer->set_params_gpu(nerf_network.params(), m_network->n_params());
+	// // Copy params from the current trainer to the torch tensor referenced by the module
+	// cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+	// CUDA_CHECK_THROW(cudaMemcpyAsync(m_trainer->params(), nerf_network.params(), m_network->n_params() * sizeof(float), cudaMemcpyDeviceToDevice, stream));
+	// CUDA_CHECK_THROW(cudaStreamSynchronize(stream));
+}
+
+void ngp::Testbed::prepare_for_torch(Module& nerf_network) {
+	// Copy params from the current trainer to the torch tensor referenced by the module
+	cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+	// NOTE: we need to reset params so that everything gets correctly referenced (for example in the MLP)
+	nerf_network.reset_params();
+
+	CUDA_CHECK_THROW(cudaMemcpyAsync(nerf_network.params(), m_trainer->params(), m_network->n_params() * sizeof(float), cudaMemcpyDeviceToDevice, stream));
+	CUDA_CHECK_THROW(cudaStreamSynchronize(stream));
+}
+
+void ngp::Testbed::reset_density () {
+	cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+	ngp::Testbed::reset_density_grid_nerf(stream);
+	CUDA_CHECK_THROW(cudaStreamSynchronize(stream));
+}
+
+void ngp::Testbed::update_density (bool initialize) {
+	cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+	ngp::Testbed::update_density_grid_nerf_3d(initialize, stream);
+	CUDA_CHECK_THROW(cudaStreamSynchronize(stream));
+}
+
+void ngp::Testbed::reset_density_network() {
+	cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+	tcnn::pcg32 rng{0};
+	// NOTE: this is a trick!
+	// Resetting all parameters is necessary to perform inference (otherwise, the reference will be overwritten)
+	m_nerf_network->initialize_params_density(rng, m_trainer->params(), m_trainer->params_original(), m_trainer->params_inference(), m_trainer->params_backward(), m_trainer->param_gradients(), 1.0);
+
+	CUDA_CHECK_THROW(cudaStreamSynchronize(stream));
+}
+
+// #ifdef NGP_TORCH
+
+// #include <neural-graphics-primitives/torch_api.h>
+
+// namespace tcnn { namespace cpp {
+
+// tcnn::cpp::Module* create_nerf_network(const nlohmann::json& model_config) {
+// 	return new tcnn::cpp::DifferentiableObject<tcnn::network_precision_t>{new ngp::NerfNetworkFull<tcnn::network_precision_t>{model_config}};
+// }
+
+// }
+
+// Module create_nerf_network(const nlohmann::json& model_config) {
+// 	std::cout << "Creating NeRF network" << std::endl;
+// 	return Module{tcnn::cpp::create_nerf_network(model_config)};
+// }
+// #endif
+
+NGP_NAMESPACE_BEGIN
+
+PYBIND11_MODULE(pyngp_bindings, m) {
 	m.doc() = "Instant neural graphics primitives";
 
 	m.def("free_temporary_memory", &tcnn::free_all_gpu_memory_arenas);
@@ -313,7 +390,11 @@ PYBIND11_MODULE(pyngp, m) {
 		.def("signed_distance", &BoundingBox::signed_distance)
 		.def_readwrite("min", &BoundingBox::min)
 		.def_readwrite("max", &BoundingBox::max)
-		;
+		.def("__repr__", [](const BoundingBox& bbox) {
+			std::stringstream stream;
+			stream << bbox;
+			return stream.str(); 
+		});
 
 	py::class_<Testbed> testbed(m, "Testbed");
 	testbed
@@ -352,9 +433,14 @@ PYBIND11_MODULE(pyngp, m) {
 		)
 		.def("screenshot", &Testbed::screenshot, "Takes a screenshot of the current window contents.", py::arg("linear")=true)
 		.def("destroy_window", &Testbed::destroy_window, "Destroy the window again.")
-		.def("train", &Testbed::train, py::call_guard<py::gil_scoped_release>(), "Perform a specified number of training steps.")
-		.def("reset", &Testbed::reset_network, "Reset training.")
-		.def("reset_accumulation", &Testbed::reset_accumulation, "Reset rendering accumulation.")
+
+		.def("train", &Testbed::train, py::call_guard<py::gil_scoped_release>(), "Perform a single training step with a specified batch size.")
+		.def("reset", &Testbed::reset_network, py::arg("reset_density_grid") = true, "Reset training.")
+		.def("reset_accumulation", &Testbed::reset_accumulation, "Reset rendering accumulation.",
+			py::arg("due_to_camera_movement") = false,
+			py::arg("immediate_redraw") = true
+		)
+
 		.def("reload_network_from_file", &Testbed::reload_network_from_file, py::arg("path")="", "Reload the network from a config file.")
 		.def("reload_network_from_json", &Testbed::reload_network_from_json, "Reload the network from a json object.")
 		.def("override_sdf_training_data", &Testbed::override_sdf_training_data, "Override the training data for learning a signed distance function")
@@ -366,7 +452,7 @@ PYBIND11_MODULE(pyngp, m) {
 		)
 		.def("n_params", &Testbed::n_params, "Number of trainable parameters")
 		.def("n_encoding_params", &Testbed::n_encoding_params, "Number of trainable parameters in the encoding")
-		.def("save_snapshot", &Testbed::save_snapshot, py::arg("path"), py::arg("include_optimizer_state")=false, "Save a snapshot of the currently trained model")
+		.def("save_snapshot", &Testbed::save_snapshot, py::arg("path"), py::arg("include_optimizer_state")=false, py::arg("compress")=true, "Save a snapshot of the currently trained model. Optionally compressed (only when saving '.ingp' files).")
 		.def("load_snapshot", &Testbed::load_snapshot, py::arg("path"), "Load a previously saved snapshot")
 		.def("load_camera_path", &Testbed::load_camera_path, "Load a camera path", py::arg("path"))
 		.def("compute_and_save_png_slices", &Testbed::compute_and_save_png_slices,
@@ -409,6 +495,10 @@ PYBIND11_MODULE(pyngp, m) {
 		.def_readwrite("shall_train_encoding", &Testbed::m_train_encoding)
 		.def_readwrite("shall_train_network", &Testbed::m_train_network)
 		.def_readwrite("render_groundtruth", &Testbed::m_render_ground_truth)
+
+		.def_readwrite("render_ground_truth", &Testbed::m_render_ground_truth)
+		.def_readwrite("groundtruth_render_mode", &Testbed::m_ground_truth_render_mode)
+
 		.def_readwrite("render_mode", &Testbed::m_render_mode)
 		.def_readwrite("slice_plane_z", &Testbed::m_slice_plane_z)
 		.def_readwrite("dof", &Testbed::m_dof)
@@ -427,6 +517,7 @@ PYBIND11_MODULE(pyngp, m) {
 		.def_readwrite("zoom", &Testbed::m_zoom)
 		.def_readwrite("screen_center", &Testbed::m_screen_center)
 		.def("set_nerf_camera_matrix", &Testbed::set_nerf_camera_matrix)
+		.def("translate_camera", &Testbed::translate_camera)
 		.def("set_camera_to_training_view", &Testbed::set_camera_to_training_view)
 		.def("compute_image_mse", &Testbed::compute_image_mse,
 			py::arg("quantize") = false
@@ -489,9 +580,14 @@ PYBIND11_MODULE(pyngp, m) {
 
 	py::class_<TrainingImageMetadata> metadata(m, "TrainingImageMetadata");
 	metadata
-		.def_readwrite("focal_length", &TrainingImageMetadata::focal_length)
-		.def_readwrite("camera_distortion", &TrainingImageMetadata::camera_distortion)
+
+		// Legacy member: lens used to be called "camera_distortion"
+		.def_readwrite("camera_distortion", &TrainingImageMetadata::lens)
+		.def_readwrite("lens", &TrainingImageMetadata::lens)
+		.def_readwrite("resolution", &TrainingImageMetadata::resolution)
+
 		.def_readwrite("principal_point", &TrainingImageMetadata::principal_point)
+		.def_readwrite("focal_length", &TrainingImageMetadata::focal_length)
 		.def_readwrite("rolling_shutter", &TrainingImageMetadata::rolling_shutter)
 		.def_readwrite("light_dir", &TrainingImageMetadata::light_dir)
 		;
@@ -588,6 +684,57 @@ PYBIND11_MODULE(pyngp, m) {
 		.def_readwrite("snap_to_pixel_centers", &Testbed::Image::Training::snap_to_pixel_centers)
 		.def_readwrite("linear_colors", &Testbed::Image::Training::linear_colors)
 		;
+
+#ifdef NGP_TORCH
+
+	py::enum_<tcnn::cpp::EPrecision>(m, "Precision")
+		.value("Fp32", tcnn::cpp::EPrecision::Fp32)
+		.value("Fp16", tcnn::cpp::EPrecision::Fp16)
+		.export_values()
+		;
+
+	m.def("preferred_precision", &tcnn::cpp::preferred_precision);
+	m.def("batch_size_granularity", &tcnn::cpp::batch_size_granularity);
+
+		// Encapsulates an abstract context of an operation
+	// (commonly the forward pass) to be passed on to other
+	// operations (commonly the backward pass).
+	py::class_<tcnn::cpp::Context>(m, "Context");
+
+	// The python bindings expose TCNN's C++ API through
+	// a single "Module" class that can act as the encoding,
+	// the neural network, or a combined encoding + network
+	// under the hood. The bindings don't need to concern
+	// themselves with these implementation details, though.
+	py::class_<Module> module_class(m, "Module");
+		module_class.def("fwd", &Module::fwd)
+		.def("bwd", &Module::bwd)
+		.def("bwd_bwd_input", &Module::bwd_bwd_input)
+		.def("initial_params", &Module::initial_params)
+		.def("n_input_dims", &Module::n_input_dims)
+		.def("n_params", &Module::n_params)
+		.def("param_precision", &Module::param_precision)
+		.def("n_output_dims", &Module::n_output_dims)
+		.def("output_precision", &Module::output_precision)
+		.def("hyperparams", &Module::hyperparams)
+		.def("name", &Module::name)
+		;
+
+	py::class_<NerfNetworkModule<precision_t>>(m, "NerfNetworkModule", module_class)
+		.def("fwd_density", &NerfNetworkModule<precision_t>::fwd_density)
+		.def("bwd_density", &NerfNetworkModule<precision_t>::bwd_density)
+		.def("bwd_bwd_input_density", &NerfNetworkModule<precision_t>::bwd_bwd_input_density)
+		.def("n_density_output_dims", &NerfNetworkModule<precision_t>::n_density_output_dims);
+
+	// m.def("create_nerf_network", &create_nerf_network);
+
+	testbed.def("get_nerf_network", &Testbed::get_nerf_network);
+	testbed.def("prepare_for_torch", &Testbed::prepare_for_torch);
+	testbed.def("prepare_for_native", &Testbed::prepare_for_native);
+	testbed.def("reset_density", &Testbed::reset_density);
+	testbed.def("update_density", &Testbed::update_density);
+	testbed.def("reset_density_network", &Testbed::reset_density_network);
+#endif 
 }
 
 NGP_NAMESPACE_END

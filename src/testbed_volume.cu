@@ -36,7 +36,7 @@ using namespace tcnn;
 
 NGP_NAMESPACE_BEGIN
 
-Testbed::NetworkDims Testbed::network_dims_volume() const {
+NetworkDims Testbed::network_dims_volume() const {
 	NetworkDims dims;
 	dims.n_input = 3;
 	dims.n_output = 4;

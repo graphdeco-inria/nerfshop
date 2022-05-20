@@ -30,7 +30,7 @@ using namespace tcnn;
 
 NGP_NAMESPACE_BEGIN
 
-Testbed::NetworkDims Testbed::network_dims_image() const {
+NetworkDims Testbed::network_dims_image() const {
 	NetworkDims dims;
 	dims.n_input = 2;
 	dims.n_output = 3;

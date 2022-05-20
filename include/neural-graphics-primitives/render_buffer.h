@@ -202,7 +202,7 @@ public:
 
 	void accumulate(float exposure, cudaStream_t stream);
 
-	void tonemap(float exposure, const Eigen::Array4f& background_color, EColorSpace output_color_space, cudaStream_t stream);
+	void tonemap(float exposure, const Eigen::Array4f& background_color, EColorSpace output_color_space, cudaStream_t stream, Eigen::Vector4f* lopi = nullptr);
 
 	void overlay_image(
 		float alpha,

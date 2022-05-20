@@ -216,9 +216,9 @@ NerfDataset load_nerf(const std::vector<filesystem::path>& jsonpaths, float shar
 
 		float sharpness_discard_threshold = json.value("sharpness_discard_threshold", 0.0f); // Keep all by default
 
-		std::sort(frames.begin(), frames.end(), [](const auto& frame1, const auto& frame2) {
-			return frame1["file_path"] < frame2["file_path"];
-		});
+		//std::sort(frames.begin(), frames.end(), [](const auto& frame1, const auto& frame2) {
+		//	return frame1["file_path"] < frame2["file_path"];
+		//});
 
 		if (json.contains("n_frames")) {
 			size_t cull_idx = std::min(frames.size(), (size_t)json["n_frames"]);

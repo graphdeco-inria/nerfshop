@@ -15,7 +15,6 @@
 
 #pragma once
 
-
 #include <tinylogger/tinylogger.h>
 
 // Eigen uses __device__ __host__ on a bunch of defaulted constructors.
@@ -58,6 +57,9 @@ using Vector2i32 = Eigen::Matrix<uint32_t, 2, 1>;
 using Vector3i16 = Eigen::Matrix<uint16_t, 3, 1>;
 using Vector4i16 = Eigen::Matrix<uint16_t, 4, 1>;
 using Vector4i32 = Eigen::Matrix<uint32_t, 4, 1>;
+
+typedef Eigen::Matrix<float, 9, 3> SH9RGB;
+typedef Eigen::Matrix<float, 9, 1> SH9Scalar;
 
 enum class EMeshRenderMode : int {
 	Off,
@@ -215,5 +217,11 @@ inline std::string replace_all(std::string str, const std::string& a, const std:
 	}
 	return str;
 }
+
+struct NetworkDims {
+	uint32_t n_input;
+	uint32_t n_output;
+	uint32_t n_pos;
+};
 
 NGP_NAMESPACE_END

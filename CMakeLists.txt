@@ -15,6 +15,9 @@ PROJECT(instant-ngp
 )
 set(NGP_VERSION "${CMAKE_PROJECT_VERSION}")
 
+# Necessary to be compatible with pytorch
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+
 if (NOT NGP_DEPLOY)
 	set(NGP_VERSION "${NGP_VERSION}dev")
 endif()
@@ -29,7 +32,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Set a default configuration if none was specified
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-	message(STATUS "No release type specified. Setting to 'Release'.")
+	message(STATUS "No release type specified. Setting to Release.")
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo")
 endif()
@@ -79,6 +82,27 @@ list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr")
 ###############################################################################
 # Dependencies
 ###############################################################################
+
+##############
+#    IGL     #
+##############
+
+# Options for libigl modules
+
+option(LIBIGL_USE_STATIC_LIBRARY          "Use libigl as static library" OFF)
+option(LIBIGL_COPYLEFT_COMISO            "Use CoMiso"                   OFF)
+option(LIBIGL_EMBREE            "Use Embree"                   OFF)
+option(LIBIGL_OPENGL            "Use OpenGL"                   OFF)
+option(LIBIGL_OPENGL_GLFW       "Use GLFW"                     OFF)
+option(LIBIGL_OPENGL_GLFW_IMGUI "Use ImGui"                    OFF)
+option(LIBIGL_PNG               "Use PNG"                      OFF)
+option(LIBIGL_COPYLEFT_TETGEN            "Use Tetgen"                   ON)
+option(LIBIGL_TRIANGLE          "Use Triangle"                 OFF)
+option(LIBIGL_PREDICATES        "Use exact predicates"         ON)
+option(LIBIGL_XML               "Use XML"                      OFF)
+set(BUILD_SHARED_LIBS OFF)
+include(libigl)
+set(BUILD_SHARED_LIBS ON)
 
 ################
 # tiny-cuda-nn #
@@ -205,8 +229,8 @@ endif()
 #########
 # OPTIX #
 #########
-find_package(OptiX)
-# set OptiX_INSTALL_DIR via your environment if it's not found automatically
+#find_package(OptiX)
+# set OptiX_INSTALL_DIR via your environment if its not found automatically
 
 if (OptiX_FOUND OR OptiX_INCLUDE)
 	include_directories("${OptiX_INCLUDE}")
@@ -214,7 +238,7 @@ if (OptiX_FOUND OR OptiX_INCLUDE)
 else()
 	message(WARNING
 		"OptiX was not found. Neural graphics primitives will still compile "
-		"and run correctly. However, SDF training in 'raystab' and 'pathescape' "
+		"and run correctly. However, SDF training in raystab and pathescape "
 		"modes will be significantly slower."
 	)
 endif()
@@ -227,10 +251,83 @@ if (Python_FOUND)
 	add_subdirectory("dependencies/pybind11")
 endif()
 
+
 ##############
 # tinylogger #
 ##############
 include_directories("dependencies/tinylogger")
+
+##########
+# Pytorch #
+##########
+if (DEFINED CACHE{TORCH_LOCATION})
+	message(STATUS "Torch location provided at: ${TORCH_LOCATION}")
+	# Include directories.
+	if(EXISTS "${TORCH_LOCATION}/include")
+	set(TORCH_INCLUDE_DIRS
+		${TORCH_LOCATION}/include
+		${TORCH_LOCATION}/include/torch/csrc/api/include)
+	else()
+	message( FATAL_ERROR "Torch include directory does not exists: ${TORCH_LOCATION}/include" )
+	endif()
+	if(EXISTS "${TORCH_LOCATION}/lib")
+	set(TORCH_LIBRARY_DIR
+		${TORCH_LOCATION}/lib)
+	else()
+	message( FATAL_ERROR "Torch lib directory does not exists: ${TORCH_LOCATION}/lib" )
+	endif()
+endif()
+
+##########
+#  CUDA  #
+##########
+# DEPRECATED
+find_package(CUDA REQUIRED)
+# ADDED TO LINK CUDA LIBS
+# https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
+find_package(CUDAToolkit REQUIRED)
+
+##############
+#  fTetWild  #
+##############
+# set(FLOAT_TETWILD_USE_FLOAT OFF)
+# add_subdirectory(dependencies/fTetWild)
+# # # Include required geogram headers
+# include_directories(${GEOGRAM_SOURCE_INCLUDE_DIR})
+
+##############
+#  MeshFix   #
+##############
+
+option(MESHFIX_WITH_LIBIGL "Use meshfix with libigl libigl" OFF)
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory("dependencies/meshfix")
+include_directories("dependencies/meshfix")
+set(JMESHEXT_DIR "${PROJECT_SOURCE_DIR}/dependencies/meshfix/JMeshExt-1.0alpha_src")
+set(JMESH_DIR "${JMESHEXT_DIR}/JMeshLib-1.2/")
+include_directories("${JMESHEXT_DIR}/include")
+include_directories("${JMESH_DIR}/include")
+set(BUILD_SHARED_LIBS ON)
+
+# Compile zlib (only on Windows)
+if (WIN32)
+	set(ZLIB_USE_STATIC_LIBS ON CACHE BOOL " " FORCE)
+	set(ZLIB_BUILD_STATIC_LIBS ON CACHE BOOL " " FORCE)
+	set(ZLIB_BUILD_SHARED_LIBS OFF CACHE BOOL " " FORCE)
+	set(SKIP_INSTALL_ALL ON CACHE BOOL " " FORCE)
+	add_subdirectory("dependencies/zlib")
+	set_property(TARGET zlibstatic PROPERTY FOLDER "dependencies")
+
+	set(ZLIB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/zlib" CACHE PATH " " FORCE)
+	set(ZLIB_LIBRARY zlibstatic)
+
+	include_directories(${ZLIB_INCLUDE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zlib")
+
+	list(APPEND NGP_LIBRARIES zlibstatic)
+endif()
+
+add_subdirectory("dependencies/zstr")
+list(APPEND NGP_LIBRARIES zstr::zstr)
 
 
 ###############################################################################
@@ -245,9 +342,12 @@ set(SOURCES
 	${GUI_SOURCES}
 	src/camera_path.cu
 	src/common_device.cu
+	src/common_nerf.cu
+	src/common_gl.cu
 	src/marching_cubes.cu
 	src/nerf_loader.cu
 	src/render_buffer.cu
+	src/student_trainer.cu
 	src/testbed.cu
 	src/testbed_image.cu
 	src/testbed_nerf.cu
@@ -257,6 +357,21 @@ set(SOURCES
 	src/tinyexr_wrapper.cu
 	src/tinyobj_loader_wrapper.cpp
 	src/triangle_bvh.cu
+	src/editing/affine_duplication.cu
+	src/editing/cage_deformation.cu
+	src/editing/twist.cu
+	src/editing/tools/correct_mm_operations.cu
+	src/editing/tools/default_mm_operations.cu
+	src/editing/tools/fast_quadric.cu
+	src/editing/tools/growing_selection.cu
+	src/editing/tools/progressive_hulls.cu
+	src/editing/tools/visualization_utils.cu
+	src/editing/tools/selection_utils.cu
+	src/editing/tools/sh_utils.cu
+	src/editing/tools/region_growing.cu
+	src/editing/datastructures/cage.cu
+	src/editing/datastructures/mesh.cu
+	src/editing/datastructures/tet_mesh.cu
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -288,8 +403,8 @@ if (OptiX_FOUND OR OptiX_INCLUDE)
 	if (NOT bin_to_c)
 		message(FATAL_ERROR
 			"bin2c not found:\n"
-			"  CMAKE_CUDA_COMPILER='${CMAKE_CUDA_COMPILER}'\n"
-			"  CUDA_COMPILER_BIN='${CUDA_COMPILER_BIN}'\n"
+			"  CMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}\n"
+			"  CUDA_COMPILER_BIN=${CUDA_COMPILER_BIN}\n"
 		)
 	endif()
 
@@ -313,13 +428,16 @@ add_library(ngp STATIC ${SOURCES})
 set_target_properties(ngp PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 set_target_properties(ngp PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(ngp PUBLIC ${NGP_LIBRARIES} tiny-cuda-nn)
+target_link_libraries(ngp PRIVATE igl::core igl::predicates meshfix)
+target_link_libraries(ngp PUBLIC igl_copyleft::tetgen)
+# target_link_libraries(ngp PUBLIC FloatTetwild)
 target_compile_options(ngp PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
 target_compile_definitions(ngp PUBLIC ${NGP_DEFINITIONS} ${TCNN_DEFINITIONS})
 
-add_executable(testbed src/main.cu)
-target_link_libraries(testbed PUBLIC ngp)
-target_compile_options(testbed PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
-target_compile_definitions(testbed PUBLIC ${NGP_DEFINITIONS} ${TCNN_DEFINITIONS})
+add_executable(nerfshop src/main.cu)
+target_link_libraries(nerfshop PUBLIC ngp)
+target_compile_options(nerfshop PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
+target_compile_definitions(nerfshop PUBLIC ${NGP_DEFINITIONS} ${TCNN_DEFINITIONS})
 
 # Copy DLSS shared libraries
 if (Vulkan_FOUND)
@@ -330,14 +448,14 @@ if (Vulkan_FOUND)
 	endif()
 
 	if (MSVC)
-		add_custom_command(TARGET testbed POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/dlss/lib/Windows_x86_64/${NGX_BUILD_DIR}/nvngx_dlss.dll" $<TARGET_FILE_DIR:testbed>
+		add_custom_command(TARGET nerfshop POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/dlss/lib/Windows_x86_64/${NGX_BUILD_DIR}/nvngx_dlss.dll" $<TARGET_FILE_DIR:nerfshop>
 			COMMAND_EXPAND_LISTS
 		)
 	else()
 		file(GLOB DLSS_SOS "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/dlss/lib/Linux_x86_64/${NGX_BUILD_DIR}/libnvidia-ngx-dlss.so.*")
-		add_custom_command(TARGET testbed POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy ${DLSS_SOS} $<TARGET_FILE_DIR:testbed>
+		add_custom_command(TARGET nerfshop POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy ${DLSS_SOS} $<TARGET_FILE_DIR:nerfshop>
 			COMMAND_EXPAND_LISTS
 		)
 	endif()
@@ -345,22 +463,35 @@ endif()
 
 
 if (Python_FOUND)
-	add_library(pyngp SHARED src/python_api.cu)
-	set_target_properties(pyngp PROPERTIES CXX_VISIBILITY_PRESET "hidden")
-	set_target_properties(pyngp PROPERTIES CUDA_VISIBILITY_PRESET "hidden")
-	target_link_libraries(pyngp PUBLIC ngp ${PYTHON_LIBRARIES} pybind11::module)
-	target_compile_options(pyngp PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
-	target_compile_definitions(pyngp PUBLIC -DNGP_PYTHON ${NGP_DEFINITIONS} ${TCNN_DEFINITIONS})
-	pybind11_extension(pyngp)
+	# add_library(pyngp_bindings SHARED src/python_api.cu)
+	# set_target_properties(pyngp_bindings PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+	# set_target_properties(pyngp_bindings PROPERTIES CUDA_VISIBILITY_PRESET "hidden")
+	# target_link_libraries(pyngp_bindings PUBLIC ngp ${PYTHON_LIBRARIES} pybind11::module)
 
-	if (MSVC)
-		# Copy dlls needed at runtime
-		file(GLOB CUBLAS_DLLS "${CUDA_COMPILER_BIN}/cublas*.dll")
-		if (CUBLAS_DLLS)
-			add_custom_command(TARGET pyngp POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy ${CUBLAS_DLLS} $<TARGET_FILE_DIR:pyngp>
-				COMMAND_EXPAND_LISTS
-			)
-		endif()
-	endif()
+	# # TORCH specific options
+	# message(STATUS ${TORCH_INCLUDE_DIRS})
+	# message(STATUS ${TORCH_LIBRARY_DIR})
+	# include_directories(${TORCH_INCLUDE_DIRS} ${CUDAToolkit_INCLUDE_DIRS})
+	# target_link_directories(pyngp_bindings PUBLIC ${TORCH_LIBRARY_DIR} ${CUDAToolkit_LIBRARY_DIR})
+	# target_link_libraries(pyngp_bindings PUBLIC cuda cudadevrt cudart_static c10 torch torch_cpu torch_python cudart c10_cuda torch_cuda_cu torch_cuda_cpp)
+	# target_compile_definitions(pyngp_bindings PUBLIC -DNGP_TORCH)
+
+	# target_compile_options(pyngp_bindings PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_NVCC_FLAGS}>)
+
+	# target_compile_definitions(pyngp_bindings PUBLIC -DNGP_PYTHON ${NGP_DEFINITIONS} ${TCNN_DEFINITIONS})
+	# pybind11_extension(pyngp_bindings)
+
+	# if (MSVC)
+	# 	# Copy dlls needed at runtime
+	# 	file(GLOB CUBLAS_DLLS "${CUDA_COMPILER_BIN}/cublas*.dll")
+	# 	if (CUBLAS_DLLS)
+	# 		add_custom_command(TARGET pyngp_bindings POST_BUILD
+	# 			COMMAND ${CMAKE_COMMAND} -E copy ${CUBLAS_DLLS} $<TARGET_FILE_DIR:pyngp_bindings>
+	# 			COMMAND_EXPAND_LISTS
+	# 		)
+	# 	endif()
+	# endif()
 endif()
+
+
+set(CMAKE_VERBOSE_MAKEFILE ON)

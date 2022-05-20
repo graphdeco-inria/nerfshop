@@ -8,6 +8,7 @@
 /venv
 /video
 /*.json
+*.ingp
 *.msgpack
 *.training
 __pycache__
