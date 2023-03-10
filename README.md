@@ -17,7 +17,6 @@ Abstract: *Neural Radiance Fields (NeRFs) have revolutionized novel view synthes
 
 This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fungraph.inria.fr. The authors are grateful to the OPAL infrastructure from Université Côte d’Azur and for the HPC resources from GENCI–IDRIS (Grant 2022-AD011013409) and to Adobe for generous research and software donations. 
 
-## BibTex
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
