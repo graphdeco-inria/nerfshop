@@ -1,6 +1,6 @@
 # NeRFshop: Interactive Editing of Neural Radiance Fields
 Clément Jambon, Bernhard Kerbl, Georgios Kopanas, Stavros Diolatzis, Thomas Leimkühler, George Drettakis <br>
-| [Webpage](https://repo-sam.inria.fr/fungraph/nerfshop/) | [Full Paper](https://repo-sam.inria.fr/fungraph/nerfshop/paper.pdf) | [Dataset](https://repo-sam.inria.fr/fungraph/nerfshop/dataset.zip) | [Video]() | <br>
+| [Webpage](https://repo-sam.inria.fr/fungraph/nerfshop/) | [Full Paper](https://repo-sam.inria.fr/fungraph/nerfshop/paper.pdf) | [Dataset](https://repo-sam.inria.fr/fungraph/nerfshop/dataset.zip) | [Video]() | [Other GRAPHDECO Publications](http://www-sop.inria.fr/reves/publis/gdindex.php) | [FUNGRAPH project page] (https://fungraph.inria.fr) | <br>
 ![Teaser image](docs/assets_tutorial/teaser.gif)
 
 <a href="https://www.inria.fr/"><img height="100" src="docs/assets_inst/logo_inria.png"> </a>
