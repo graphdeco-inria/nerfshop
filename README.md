@@ -1,6 +1,7 @@
 # NeRFshop: Interactive Editing of Neural Radiance Fields
 Clément Jambon, Bernhard Kerbl, Georgios Kopanas, Stavros Diolatzis, Thomas Leimkühler, George Drettakis <br>
-| [Webpage](https://repo-sam.inria.fr/fungraph/nerfshop/) | [Full Paper](https://repo-sam.inria.fr/fungraph/nerfshop/paper.pdf) | [Dataset](https://repo-sam.inria.fr/fungraph/nerfshop/dataset.zip) | [Video]() | [Other GRAPHDECO Publications](http://www-sop.inria.fr/reves/publis/gdindex.php) | [FUNGRAPH project page](https://fungraph.inria.fr) | <br>
+| [Webpage](https://repo-sam.inria.fr/fungraph/nerfshop/) | [Full Paper](https://repo-sam.inria.fr/fungraph/nerfshop/paper.pdf) | [Dataset](https://repo-sam.inria.fr/fungraph/nerfshop/dataset.zip) | [Video]() | <br>
+| [Other GRAPHDECO Publications](http://www-sop.inria.fr/reves/publis/gdindex.php) | [FUNGRAPH project page](https://fungraph.inria.fr) | <br>
 ![Teaser image](docs/assets_tutorial/teaser.gif)
 
 <a href="https://www.inria.fr/"><img height="100" src="docs/assets_inst/logo_inria.png"> </a>
@@ -11,6 +12,10 @@ Clément Jambon, Bernhard Kerbl, Georgios Kopanas, Stavros Diolatzis, Thomas Lei
 <a href="https://team.inria.fr/graphdeco/"> <img style="width:90%; padding-right: 15px;" src="docs/assets_inst/logo_graphdeco.png"></a>
 
 Abstract: *Neural Radiance Fields (NeRFs) have revolutionized novel view synthesis for captured scenes, with recent methods allowing interactive free-viewpoint navigation and fast training for scene reconstruction. However, the implicit representations used by these methods — often including neural networks and complex encodings — make them difficult to edit. Some initial methods have been proposed, but they suffer from limited editing capabilities and/or from a lack of interactivity, and are thus unsuitable for interactive editing of captured scenes. We tackle both limitations and introduce NeRFshop, a novel end-to-end method that allows users to interactively select and deform objects through cage-based transformations. NeRFshop provides fine scribble-based user control for the selection of regions or objects to edit, semi-automatic cage creation, and interactive volumetric manipulation of scene content thanks to our GPU-friendly two-level interpolation scheme. Further, we introduce a preliminary approach that reduces potential resulting artifacts of these transformations with a volumetric membrane interpolation technique inspired by Poisson image editing and provide a process that "distills" the edits into a standalone NeRF representation.*
+
+## Funding
+
+This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fungraph.inria.fr. The authors are grateful to the OPAL infrastructure from Université Côte d’Azur and for the HPC resources from GENCI–IDRIS (Grant 2022-AD011013409). 
 
 ## Installation
 
