@@ -1883,14 +1883,7 @@ void Testbed::init_window(int resw, int resh, bool hidden) {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 	glfwWindowHint(GLFW_VISIBLE, hidden ? GLFW_FALSE : GLFW_TRUE);
-	std::string title = "Neural graphics primitives (";
-	switch (m_testbed_mode) {
-		case ETestbedMode::Image: title += "Image"; break;
-		case ETestbedMode::Sdf: title += "SDF"; break;
-		case ETestbedMode::Nerf: title += "NeRF"; break;
-		case ETestbedMode::Volume: title += "Volume"; break;
-	}
-	title += ")";
+	std::string title = "NeRFshop";
 	m_glfw_window = glfwCreateWindow(m_window_res.x(), m_window_res.y(), title.c_str(), NULL, NULL);
 	if (m_glfw_window == NULL) {
 		throw std::runtime_error{"GLFW window could not be created."};
