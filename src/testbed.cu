@@ -1040,6 +1040,9 @@ void Testbed::imgui() {
 	}
 
 
+	// Define position and size of editing window
+	ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + main_viewport->WorkSize.x - 280, main_viewport->WorkPos.y), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(280, 680), ImGuiCond_FirstUseEver);
 
 	// Editing window
 	if (int read = ImGui::Begin("Editing")) {
@@ -1234,11 +1237,6 @@ void Testbed::imgui() {
 			//ImGui::Text("Requested batch size: %d,\nSub batch size: %d,\nn sub batches: %d", 1 << m_student_trainer_batch_size, m_student_trainer.sub_batch_size, m_student_trainer.n_sub_batches);
 			//ImGui::PlotLines("loss", m_student_loss_graph, std::min(m_student_loss_graph_samples, 256u), (m_student_loss_graph_samples < 256u) ? 0 : (m_student_loss_graph_samples & 255u), 0, FLT_MAX, FLT_MAX, ImVec2(0, 50.f));
 		}
-
-		// Define position and size of editing window
-		ImGui::SetWindowSize(ImVec2(-1, 700), ImGuiCond_FirstUseEver);
-		auto edit_size = ImGui::GetWindowSize();
-		ImGui::SetWindowPos(ImVec2(main_viewport->WorkPos.x + main_viewport->WorkSize.x - edit_size.x, main_viewport->WorkPos.y), ImGuiCond_FirstUseEver);
 		
 /*		ImGui::NextWindowPos(ImVec2(main_viewport->WorkPos.x + main_viewport->WorkSize.x - 350, main_viewport->WorkPos.y), ImGuiCond_FirstUseEver)*/;
 		
