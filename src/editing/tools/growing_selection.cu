@@ -72,7 +72,7 @@ GrowingSelection::GrowingSelection(
 	glGenTextures(1, &m_debug_envmap_texture);
 
 	// Initialize mm_operator
-	std::cout << (bool)m_MM_operations << std::endl;
+	// std::cout << (bool)m_MM_operations << std::endl;
 }
 
 GrowingSelection::GrowingSelection(
@@ -370,7 +370,7 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 			ImGui::SliderFloat("Plane Offset", &m_plane_offset, -1.0f, 1.0f);
 			if(ImGui::SliderFloat("MVC gamma", &m_poisson_editing.mvc_gamma, 1.f, 2.f)) {
 				if (!tet_interpolation_mesh && tet_interpolation_mesh->vertices.size() > 0) {
-					std::cout << "Updating MVC to gamma = " << m_poisson_editing.mvc_gamma << std::endl;
+					// std::cout << "Updating MVC to gamma = " << m_poisson_editing.mvc_gamma << std::endl;
 					proxy_cage.compute_mvc(tet_interpolation_mesh->original_vertices, tet_interpolation_mesh->gamma_coordinates, tet_interpolation_mesh->labels, true, m_poisson_editing.mvc_gamma);
 					interpolate_poisson_boundary();
 				}
@@ -546,7 +546,7 @@ bool GrowingSelection::visualize_edit_gui(const Eigen::Matrix<float, 4, 4> &view
 			if (selected_pixel != m_last_selected_pixel) {
 				if (m_selection_mode == ESelectionMode::PixelWise) {
 					if (selected_pixel != m_last_selected_pixel) {
-						std::cout << "Selected new pixel: " << selected_pixel << std::endl;
+						// std::cout << "Selected new pixel: " << selected_pixel << std::endl;
 						m_selected_pixels_imgui.push_back(ImVec2(io.MousePos.x, io.MousePos.y));
 						m_selected_pixels.push_back(selected_pixel);
 						m_last_selected_pixel = selected_pixel;
@@ -849,7 +849,7 @@ void GrowingSelection::select_scribbling(const Eigen::Matrix<float, 4, 4>& world
 		}
 		cage_edition.selection_barycenter /= cage_edition.selected_vertices.size();
 
-		std::cout << "Selected " << n_selected << " out of " << proxy_cage.vertices.size() << " vertices" << std::endl;
+		// std::cout << "Selected " << n_selected << " out of " << proxy_cage.vertices.size() << " vertices" << std::endl;
 	}
 }
 
@@ -935,7 +935,7 @@ void GrowingSelection::select_cage_rect(const Eigen::Matrix<float, 4, 4>& world2
 		}
 		cage_edition.selection_barycenter /= cage_edition.selected_vertices.size();
 		
-		std::cout << "Selected " << n_selected <<  " out of " << proxy_cage.vertices.size() << " vertices" << std::endl;
+		// std::cout << "Selected " << n_selected <<  " out of " << proxy_cage.vertices.size() << " vertices" << std::endl;
 	}
 }
 
@@ -1159,7 +1159,7 @@ void GrowingSelection::proxy_mesh_from_file(std::string orig_file)
             m_cage_color[2]);
 	}
 
-	std::cout << "Fixed proxy cage with meshfix" << std::endl;
+	// std::cout << "Fixed proxy cage with meshfix" << std::endl;
 }
 
 void GrowingSelection::fix_proxy_mesh() {
@@ -1211,7 +1211,7 @@ void GrowingSelection::fix_proxy_mesh() {
             m_cage_color[2]);
     }
 
-	std::cout << "Fixed proxy cage with meshfix" << std::endl;
+	// std::cout << "Fixed proxy cage with meshfix" << std::endl;
 }
 
 void GrowingSelection::clear() {
@@ -1501,7 +1501,7 @@ void GrowingSelection::extract_tet_mesh() {
     Eigen::MatrixXd tetgen_pts(proxy_cage.original_vertices.size(), 3);
     Eigen::MatrixXi tetgen_faces(n_faces, 3);
 
-	std::cout << "Beginning " << n_verts << std::endl;
+	// std::cout << "Beginning " << n_verts << std::endl;
 	
 	// Note: use proxy_cage original weights!
     for (size_t i = 0; i < n_verts; ++i) {
@@ -1522,7 +1522,7 @@ void GrowingSelection::extract_tet_mesh() {
     std::stringstream buf;
     buf.precision(100);
     buf.setf(std::ios::fixed, std::ios::floatfield);
-    buf << "pq2.0a"
+    buf << "Qpq2.0a"
         << max_volume;
     if (preserve_surface_mesh) {
         buf << "Y";
@@ -1564,7 +1564,7 @@ void GrowingSelection::extract_tet_mesh() {
     std::vector<uint32_t> tet_faces_host;
     inner_faces_from_tet(tetgen_generated_tets, tet_faces_host);
 
-	std::cout << "RELEVANT: " << proxy_cage.vertices.size() << std::endl;
+	// std::cout << "RELEVANT: " << proxy_cage.vertices.size() << std::endl;
     std::cout << "Computed tet mesh with " << n_verts << " vertices, " << n_faces << " triangles and " << n_tets << " tets" << std::endl;
 }   
 
@@ -1996,7 +1996,7 @@ void GrowingSelection::project_selection_pixels(const std::vector<Vector2i>& ray
 		std::cout << "Couldn't find surface when shooting rays..." << std::endl;
 		return;
 	}
-	std::cout << "Reprojected " << n_rays << "rays" << std::endl;
+	std::cout << "Reprojected " << n_rays << " rays" << std::endl;
 	
 	// Clear selected pixels after projection
 	m_selected_pixels.clear();
@@ -2212,7 +2212,7 @@ void GrowingSelection::compute_poisson_boundary(const bool is_inside) {
 		}
 	}
 
-	std::cout << "Sampled coordinates..." << std::endl;
+	// std::cout << "Sampled coordinates..." << std::endl;
 
 	tcnn::GPUMemoryArena::Allocation alloc;
 	auto scratch = allocate_workspace_and_distribute<
@@ -2241,7 +2241,7 @@ void GrowingSelection::compute_poisson_boundary(const bool is_inside) {
 	// Perform inference
 	m_nerf_network->inference_mixed_precision(m_stream, coord_matrix, rgbsigma_matrix);
 
-	std::cout << "Performed inference..." << std::endl;
+	// std::cout << "Performed inference..." << std::endl;
 
 	// Activate output
 	linear_kernel(activate_network_output, 0, m_stream,
@@ -2263,7 +2263,7 @@ void GrowingSelection::compute_poisson_boundary(const bool is_inside) {
 			density_out);
 	}
 
-	std::cout << "Activated output..." << std::endl;
+	// std::cout << "Activated output..." << std::endl;
 
 	std::vector<Array3f> rgb_host(n_samples);
 	std::vector<float> density_host(n_samples);
@@ -2297,7 +2297,7 @@ void GrowingSelection::compute_poisson_boundary(const bool is_inside) {
 		// proxy_cage.colors[k] = evaluate_sh9(averaged_sh, Eigen::Vector3f(0.f, 0.f, 1.f));
 	}
 
-	std::cout << "Stored density and SHs..." << std::endl;
+	// std::cout << "Stored density and SHs..." << std::endl;
 }
 
 void GrowingSelection::interpolate_poisson_boundary() {
@@ -2308,7 +2308,7 @@ void GrowingSelection::interpolate_poisson_boundary() {
 
 	if (proxy_cage.inside_shs.size() != proxy_cage.vertices.size()) {
 		compute_poisson_boundary(true);
-		std::cout << "Updating inside shs" << std::endl;
+		// std::cout << "Updating inside shs" << std::endl;
 	}
 
 	// In any case, re-compute the outside values
@@ -2358,13 +2358,13 @@ void GrowingSelection::interpolate_poisson_boundary() {
 	// }
 
 
-	std::cout << "Updated poisson MVC-interpolated tet values residuals..." << std::endl;
+	// std::cout << "Updated poisson MVC-interpolated tet values residuals..." << std::endl;
 }
 
 void GrowingSelection::generate_poisson_cube_map() {
 	if (proxy_cage.inside_shs.size() == 0) {
 		compute_poisson_boundary(true);
-		std::cout << "Computing SHs to generate a cube map..." << std::endl;
+		// std::cout << "Computing SHs to generate a cube map..." << std::endl;
 	}
 
 	if (proxy_cage.inside_shs.size() == 0) {

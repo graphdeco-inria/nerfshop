@@ -223,7 +223,7 @@ __global__ void interpolate_tet(
 
         uint32_t cell_idx = level * NERF_GRIDVOLUME() + cascaded_grid_idx_at(unwarped_pos, level);
 
-		int tested = 0;
+		// int tested = 0;
         // If cell contains a triangle, get it(/them)
         for (uint32_t j = tet_lut_offsets[cell_idx]; j < tet_lut_offsets[cell_idx+1]; j++) {
             uint32_t tet_idx = tet_lut_idx[j];

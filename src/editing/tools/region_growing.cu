@@ -113,7 +113,7 @@ void RegionGrowing::grow_region(float density_threshold, ERegionGrowingMode regi
         // }
         // // Test 
     }
-    std::cout << "Selected " << m_selection_points.size() << " points overall" << std::endl;
+    // std::cout << "Selected " << m_selection_points.size() << " points overall" << std::endl;
 }
 
 // Queue needs to be copied because we'll exhaust it
