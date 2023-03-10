@@ -15,14 +15,14 @@ Abstract: *Neural Radiance Fields (NeRFs) have revolutionized novel view synthes
 
 ## Funding
 
-This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fungraph.inria.fr. The authors are grateful to the OPAL infrastructure from Université Côte d’Azur and for the HPC resources from GENCI–IDRIS (Grant 2022-AD011013409) and to Adobe for generous research and software donations. 
+This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fungraph.inria.fr. The authors are grateful to the OPAL infrastructure from Université Côte d’Azur for providing resources and support. The authors would also like to thank Adobe for their generous research and software donations.
 
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
     <pre><code>@Article{NeRFshop23,
-  author       = {Jambon, Cl\'ement and Kerbl, Bernhard and Kopanas, Georgios and Diolatzis, Stavros and Leimk{\"u}hler, Thomas and Drettakis, George"}
-  title        = {NeRFshop: Interactive Editing of Neural Radiance Fields"},
+  author       = {Jambon, Cl\'ement and Kerbl, Bernhard and Kopanas, Georgios and Diolatzis, Stavros and Leimk{\"u}hler, Thomas and Drettakis, George},
+  title        = {NeRFshop: Interactive Editing of Neural Radiance Fields},
   journal      = {Proceedings of the ACM on Computer Graphics and Interactive Techniques},
   number       = {1},
   volume       = {6},
