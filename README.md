@@ -21,8 +21,8 @@ This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fun
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-    <pre><code>@Article{JKKDLD23},
-	author = {Jambon, Cl\'ement and Kerbl, Bernhard and Kopanas, Georgios and Diolatzis, Stavros and Leimk{\"u}hler, Thomas and Drettakis, George"}
+    <pre><code>@Article{NeRFshop23},
+	author      = {Jambon, Cl\'ement and Kerbl, Bernhard and Kopanas, Georgios and Diolatzis, Stavros and Leimk{\"u}hler, Thomas and Drettakis, George"}
     title        = {NeRFshop: Interactive Editing of Neural Radiance Fields"},
     journal      = {Proceedings of the ACM on Computer Graphics and Interactive Techniques},
     number       = {1},
