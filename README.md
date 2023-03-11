@@ -164,7 +164,7 @@ In real scenes, artifacts can be carried with the cage when trying to insert a d
 
 Like with image or 3D geometry editing tools, we offer the possibility to export your edited scene into a standalone NeRF format, namely the format supported by the modern implementation of Instant-NGP (`.ingp`). Once you are happy with your edits, you can click the `Distill` button at the bottom of the Editing window. This will start NeRF training again, but the training will respect the operators you placed. You can stop training when the quality is sufficient for your needs. To save your distilled NeRF so it can be loaded by Instant-NGP-based applications, click the `Save` button in the `Snapshot` section of the main window.
 
-This feature is in alpha and has known limitations. Distilling destructive edits will cause artifacts: a destructive edit is when an object A is moved or deformed such that it (partially) overlaps with another object B, and thus B is (partially) destroyed/overwritten. However, it is possible to first move B out of the way (to some empty space) and then move A to where B used to be. After distilling, you might then make object B vanish (see below). 
+This feature is in alpha and has known limitations. Distilling does not (yet) account for membrane interpolation correction. Distilling destructive edits will cause artifacts: a destructive edit is when an object A is moved or deformed such that it (partially) overlaps with another object B, and thus B is (partially) destroyed/overwritten. However, it is possible to first move B out of the way (to some empty space) and then move A to where B used to be. After distilling, you might then make object B vanish (see below). 
 
 ### Removing elements
 
