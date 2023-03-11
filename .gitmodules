@@ -15,7 +15,7 @@
 	url = https://github.com/Tom94/tinylogger
 [submodule "dependencies/tiny-cuda-nn"]
 	path = dependencies/tiny-cuda-nn
-	url = git@gitlab.inria.fr:cjambon/tcnn-pyngp.git
+	url = https://gitlab.inria.fr/cjambon/tcnn-pyngp.git
 	branch = pyngp-api
 [submodule "dependencies/imgui"]
 	path = dependencies/imgui
@@ -25,7 +25,7 @@
 	url = https://github.com/NVIDIA/DLSS
 [submodule "dependencies/meshfix"]
 	path = dependencies/meshfix
-	url = git@gitlab.inria.fr:cjambon/meshfix.git
+	url = https://gitlab.inria.fr/cjambon/meshfix.git
 [submodule "dependencies/zstr"]
 	path = dependencies/zstr
 	url = https://github.com/Tom94/zstr
