@@ -207,6 +207,8 @@ NeRFshop supports multiple and composable edits. To do so, simply add new operat
 * Simpler edits can be performed using the `Affine Duplication` operator.
 * The shortcuts and controls are unchanged (please refer to the [original documentation](https://github.com/NVlabs/instant-ngp#keyboard-shortcuts-and-recommended-controls))
 
+Below, we provide the original README for Instant-NGP as per the version that NeRFshop is based on.
+
 # Instant Neural Graphics Primitives ![](https://github.com/NVlabs/instant-ngp/workflows/CI/badge.svg)
 
 <img src="docs/assets_readme/fox.gif" height="342"/> <img src="docs/assets_readme/robot5.gif" height="342"/>
