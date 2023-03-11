@@ -35,7 +35,7 @@ This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fun
 
 ## Installation
 
-### Requirements
+### Building Requirements
 
 - An __NVIDIA GPU__; tensor cores increase performance when available. All shown results come from an RTX 3090.
 - A __C++14__ capable compiler. The following choices are recommended and have been tested:
