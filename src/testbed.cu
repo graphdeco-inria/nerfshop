@@ -81,6 +81,8 @@ NGP_NAMESPACE_BEGIN
 
 std::atomic<size_t> g_total_n_bytes_allocated{0};
 
+const char* placeholder_message = "Editing is disabled during training.";
+
 json merge_parent_network_config(const json& child, const fs::path& child_filename) {
 	if (!child.contains("parent")) {
 		return child;
@@ -440,7 +442,7 @@ void Testbed::imgui() {
 	// Define position and size of training window
 	const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(250, 680), ImGuiCond_FirstUseEver);
+    //ImGui::SetNextWindowSize(ImVec2(250, 680), ImGuiCond_FirstUseEver);
 
 	ImGui::Begin("instant-ngp v" NGP_VERSION);
 
@@ -1041,14 +1043,15 @@ void Testbed::imgui() {
 
 
 	// Define position and size of editing window
-	ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + main_viewport->WorkSize.x - 280, main_viewport->WorkPos.y), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(280, 680), ImGuiCond_FirstUseEver);
+	auto w = ImGui::CalcTextSize(placeholder_message).x + 10 + ImGui::GetStyle().FramePadding.x * 2.0f;
+	ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + main_viewport->WorkSize.x - w, main_viewport->WorkPos.y), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(w, 2 * w), ImGuiCond_FirstUseEver);
 
 	// Editing window
 	if (int read = ImGui::Begin("Editing")) {
 		if (m_train)
 		{
-			ImGui::Text("Editing is disabled during training");
+			ImGui::Text(placeholder_message);
 		}
 		else
 		{
