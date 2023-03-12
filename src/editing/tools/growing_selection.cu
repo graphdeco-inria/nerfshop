@@ -133,6 +133,7 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 	if (proxy_allowed) {
 		if (m_refine_cage) {
 			if (ImGui::Button("EXTRACT CAGE")) {
+				ImGui::Text("Please wait, extracting cage...");
 				compute_proxy_mesh();
 				fix_proxy_mesh();
 			}
@@ -140,6 +141,7 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 			if (proxy_cage.vertices.size() > 0) {
 				ImGui::SameLine();
 				if (ImGui::Button("COMPUTE PROXY")) {
+					ImGui::Text("Please wait, computing proxy...");
 					fix_proxy_mesh();
 					update_tet_mesh();
 					interpolate_poisson_boundary();
@@ -149,6 +151,7 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 			ImGui::SameLine();
 			// Will extract and clean the proxy directly, then compute the tet mesh and extract it as well
 			if (ImGui::Button("COMPUTE PROXY")) {
+				ImGui::Text("Please wait, computing proxy...");
 				fix_proxy_mesh();
 				update_tet_mesh();
 				interpolate_poisson_boundary();
