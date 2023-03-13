@@ -55,6 +55,11 @@ sudo apt-get install build-essential git python3-dev python3-pip libopenexr-dev 
                      xorg-dev libeigen3-dev
 ```
 
+### Binaries for Windows
+
+For windows, if you have a graphics card in the RTX 2000 or RTX 3000 & 4000 series, you can download the following binaries and execute the `.exe` file corresponding to your device: 
+* [RTX 2000 or RTX 3000 & 4000 series](https://repo-sam.inria.fr/fungraph/nerfshop/binaries-rtx-2000-3000-4000.zip)
+
 ### Building
 
 First clone the repo, e.g., via git command line with:
