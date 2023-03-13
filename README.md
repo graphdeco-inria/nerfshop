@@ -35,6 +35,11 @@ This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fun
 
 ## Installation
 
+### Pre-built Binaries for Windows
+
+For windows, if you have a graphics card in the RTX 2000 or RTX 3000 & 4000 series, you can download the following binaries and execute the `.exe` file corresponding to your device: 
+* [RTX 2000 or RTX 3000 & 4000 series](https://repo-sam.inria.fr/fungraph/nerfshop/binaries-rtx-2000-3000-4000.zip)
+
 ### Building Requirements
 
 - An __NVIDIA GPU__; tensor cores increase performance when available. All shown results come from an RTX 3090.
@@ -54,11 +59,6 @@ sudo apt-get install build-essential git python3-dev python3-pip libopenexr-dev 
                      libglfw3-dev libglew-dev libomp-dev libxinerama-dev libxcursor-dev \
                      xorg-dev libeigen3-dev
 ```
-
-### Binaries for Windows
-
-For windows, if you have a graphics card in the RTX 2000 or RTX 3000 & 4000 series, you can download the following binaries and execute the `.exe` file corresponding to your device: 
-* [RTX 2000 or RTX 3000 & 4000 series](https://repo-sam.inria.fr/fungraph/nerfshop/binaries-rtx-2000-3000-4000.zip)
 
 ### Building
 
@@ -145,7 +145,7 @@ When you are statisfied with your current 3D selection, you can run our automati
 
 <img src="docs/assets_tutorial/compute_proxy.gif" height="500"/>
 
-If you wish more control on the cage after it is build, you can tick the `Cage refinement` option, push `EXTRACT CAGE`, edit the resulting cage (similarly to a standard cage-based deformation as described below) and finally hit `COMPUTE PROXY` to derive the final cage.
+If you wish more control on the cage after it is built, you can tick the `Cage refinement` option, push `EXTRACT CAGE`, edit the resulting cage (similarly to a standard cage-based deformation as described below) and finally hit `COMPUTE PROXY` to derive the final cage.
 
 Once the cage is built, you can manipulate it by:
 * SELECTION: either keep `Shift` pressed and capture points with a rectangle or keep `Ctrl` pressed and paint the points that you want to select (the size of the brush can be changed with the mouse wheel). At any time, you can clear your selection with `Alt`
