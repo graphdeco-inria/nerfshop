@@ -54,12 +54,49 @@ void RegionGrowing::reset_growing(const std::vector<uint32_t>& selected_cells, i
     }
 }
 
+void RegionGrowing::upscale_selection(int current_level) {
+    // If the current level is already the maximum cascade, we can't upscale
+    if (current_level == m_max_cascade)
+        return;
+    // Otherwise, upscale everything
+    m_growing_level = current_level + 1;
+
+    // Reset the bitfield grid
+    std::fill(m_selection_grid_bitfield.begin(), m_selection_grid_bitfield.end(), 0);
+    
+    // Upscale the existing points
+    std::vector<uint32_t> new_cell_indices;
+    m_selection_points = std::vector<Eigen::Vector3f>();
+    for (const auto cell_idx: m_selection_cell_idx) {
+        uint32_t new_cell_idx = get_upper_cell_idx(cell_idx, m_growing_level);
+        uint32_t new_pos_idx = new_cell_idx / (NERF_GRIDVOLUME());
+        uint32_t x = tcnn::morton3D_invert(new_pos_idx>>0);
+        uint32_t y = tcnn::morton3D_invert(new_pos_idx>>1);
+        uint32_t z = tcnn::morton3D_invert(new_pos_idx>>2);
+        Eigen::Vector3f cell_pos = get_cell_pos(x, y, z, m_growing_level);
+        m_selection_points.push_back(cell_pos);
+        new_cell_indices.push_back(new_cell_idx);
+        set_bitfield_at(new_pos_idx, m_growing_level, true, m_selection_grid_bitfield.data());
+    }
+    m_selection_cell_idx = new_cell_indices;
+
+    // Upscale the growing queue too
+    std::queue<uint32_t> new_growing_queue;
+    while (!m_growing_queue.empty()) {
+        uint32_t current_cell = m_growing_queue.front();
+        m_growing_queue.pop();
+        new_growing_queue.push(get_upper_cell_idx(current_cell, m_growing_level));
+    }
+    new_growing_queue = m_growing_queue;
+}
+
 void RegionGrowing::grow_region(float density_threshold, ERegionGrowingMode region_growing_mode, int growing_level, int growing_steps) {
     // Make sure we can actually grow!
     if (m_growing_queue.empty()) {
         std::cout << "Growing queue is empty!" << std::endl;
         return;
     }
+    m_growing_level = growing_level; 
 
     int i = 1;
 
@@ -70,11 +107,22 @@ void RegionGrowing::grow_region(float density_threshold, ERegionGrowingMode regi
             m_growing_queue.pop();
 
             // Get position (with corresponding level) to fetch neighbours
-            const uint32_t level = current_cell / (NERF_GRIDVOLUME());
-            const uint32_t pos_idx = current_cell % (NERF_GRIDVOLUME());
+            uint32_t level = current_cell / (NERF_GRIDVOLUME());
+            uint32_t pos_idx = current_cell % (NERF_GRIDVOLUME());
 
             // Sample accepted only if at requested level, statisfying density threshold and not already selected!
-            if (!get_bitfield_at(pos_idx, level, m_selection_grid_bitfield.data()) && current_density >= density_threshold && level == growing_level) {
+            if (!get_bitfield_at(pos_idx, level, m_selection_grid_bitfield.data()) && current_density >= density_threshold && level == m_growing_level) {
+                
+                // Test whether the new sample touches the boundary, if yes then upscale!
+                if (is_boundary(pos_idx)) {
+                    std::cout << "UPSAMPLING" << std::endl;
+                    upscale_selection(m_growing_level);
+                    // Don´t forget to also upscale the current cell!
+                    current_cell = get_upper_cell_idx(current_cell, m_growing_level);
+                    level = current_cell / (NERF_GRIDVOLUME());
+                    pos_idx = current_cell % (NERF_GRIDVOLUME());
+                }
+
                 // Invert morton coordinates to get xyz
                 uint32_t x = tcnn::morton3D_invert(pos_idx>>0);
                 uint32_t y = tcnn::morton3D_invert(pos_idx>>1);

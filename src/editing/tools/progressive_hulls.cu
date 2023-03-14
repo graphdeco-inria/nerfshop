@@ -269,6 +269,19 @@ bool progressive_hulls_quadratic(
     {
         progressive_hulls_quadratic_cost_and_placement(e, V, F, E, EMAP, EF, EI, cost, p, params);
     };
+    {
+        std::ofstream outfile("test.obj");
+        for (int i = 0; i < V.rows(); i++)
+        {
+            auto v = V.row(i);
+            outfile << "v " <<  v.x() << " " << v.y() << " " << v.z() << std::endl;
+        }
+        for (int i = 0; i < F.rows(); i++)
+        {
+            auto f = F.row(i);
+            outfile << "f " << f.x()+1 << " " << f.y()+1 << " " << f.z()+1 << std::endl;
+        }
+    }
     return igl::decimate(
         V,
         F,

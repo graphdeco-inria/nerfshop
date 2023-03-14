@@ -36,10 +36,11 @@ public:
         const ENerfActivation rgb_activation,
         const ENerfActivation density_activation,
         const Eigen::Vector3f light_dir,
-        const std::string default_envmap_path
+        const std::string default_envmap_path,
+        const uint32_t max_cascade
     ) : 
         m_scene_aabb{aabb},
-        m_growing_selection(aabb, stream, nerf_network, density_grid, density_grid_bitfield, cone_angle_constant, rgb_activation, density_activation, light_dir, default_envmap_path) 
+        m_growing_selection(aabb, stream, nerf_network, density_grid, density_grid_bitfield, cone_angle_constant, rgb_activation, density_activation, light_dir, default_envmap_path, max_cascade) 
     {
     }
 
@@ -54,10 +55,11 @@ public:
         const ENerfActivation rgb_activation,
         const ENerfActivation density_activation,
         const Eigen::Vector3f light_dir,
-        const std::string default_envmap_path
+        const std::string default_envmap_path,
+        const uint32_t max_cascade
     ) : 
         m_scene_aabb{aabb},
-        m_growing_selection(operator_json, aabb, stream, nerf_network, density_grid, density_grid_bitfield, cone_angle_constant, rgb_activation, density_activation, light_dir, default_envmap_path) 
+        m_growing_selection(operator_json, aabb, stream, nerf_network, density_grid, density_grid_bitfield, cone_angle_constant, rgb_activation, density_activation, light_dir, default_envmap_path, max_cascade) 
     {
     }
 

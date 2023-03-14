@@ -65,7 +65,7 @@ void visualize_quad(const Matrix<float, 4, 4>& world2proj, const Vector3f pos, c
 void visualize_level_cube(const Matrix<float, 4, 4>& world2proj, const uint32_t level) {
 	ImDrawList* list = ImGui::GetForegroundDrawList();
 
-	const float scale = scalbnf(1.0f, level-1);
+	const float scale = scalbnf(1.0f, level);
 
 	add_debug_line(world2proj, list, scale * (Vector3f{0.f,0.f,0.f} - Eigen::Vector3f::Constant(0.5f)) + Eigen::Vector3f::Constant(0.5f), scale * (Vector3f{0.f,0.f,1.f} - Eigen::Vector3f::Constant(0.5f)) + Eigen::Vector3f::Constant(0.5f), 0xffff4040); // Z
 	add_debug_line(world2proj, list, scale * (Vector3f{1.f,0.f,0.f} - Eigen::Vector3f::Constant(0.5f)) + Eigen::Vector3f::Constant(0.5f), scale * (Vector3f{1.f,0.f,1.f} - Eigen::Vector3f::Constant(0.5f)) + Eigen::Vector3f::Constant(0.5f), 0xffffffff);

@@ -47,7 +47,8 @@ GrowingSelection::GrowingSelection(
         const ENerfActivation rgb_activation,
         const ENerfActivation density_activation,
         const Eigen::Vector3f light_dir,
-        const std::string default_envmap_path
+        const std::string default_envmap_path,
+		const uint32_t max_cascade
     ) : 
         m_aabb{aabb},
         m_stream{stream}, 
@@ -59,8 +60,9 @@ GrowingSelection::GrowingSelection(
         m_density_activation{density_activation},
         m_light_dir{light_dir},
 		m_default_envmap_path{default_envmap_path},
-		m_region_growing{density_grid, density_grid_bitfield},
-		m_MM_operations{new CorrectMMOperations()} {
+		m_region_growing(density_grid, density_grid_bitfield, max_cascade),
+		m_MM_operations{new CorrectMMOperations()},
+		m_max_cascade{max_cascade} {
 
 	// For each face:
 	for (int f = 0; f < 6; f++) {
@@ -86,8 +88,9 @@ GrowingSelection::GrowingSelection(
 	const ENerfActivation rgb_activation,
 	const ENerfActivation density_activation,
 	const Eigen::Vector3f light_dir,
-	const std::string default_envmap_path
-) : GrowingSelection(aabb, stream, nerf_network, density_grid, density_grid_bitfield, cone_angle_constant, rgb_activation, density_activation, light_dir, default_envmap_path) {
+	const std::string default_envmap_path,
+	const uint32_t max_cascade
+) : GrowingSelection(aabb, stream, nerf_network, density_grid, density_grid_bitfield, cone_angle_constant, rgb_activation, density_activation, light_dir, default_envmap_path, max_cascade) {
 
 	from_json(operator_json["projected_pixels"], m_projected_pixels);
 	from_json(operator_json["projected_labels"], m_projected_labels);
@@ -628,9 +631,9 @@ bool GrowingSelection::visualize_edit_gui(const Eigen::Matrix<float, 4, 4> &view
 		reset_cage_selection();
 	}
 
-	if (m_visualize_max_level_cube) {
-		visualize_level_cube(world2proj, m_growing_level);
-	}
+	// if (m_visualize_max_level_cube) {
+	visualize_level_cube(world2proj, m_growing_level);
+	// }
 
 	if (!m_plane_dir.isZero())
 	{
@@ -1948,8 +1951,10 @@ void GrowingSelection::project_selection_pixels(const std::vector<Vector2i>& ray
 	if (m_automatic_max_level) {
 		m_growing_level = 0;
 		for (int i = 0; i< ray_counter_host; i++) {
+			uint32_t level = grid_indices_host_tmp[i] / NERF_GRIDVOLUME();
+			std::cout << level << std::endl;
 			if (m_aabb.contains(m_projected_pixels_tmp[i])) {
-				uint32_t level = grid_indices_host_tmp[i] / NERF_GRIDVOLUME();
+				
 
 				// If it's bigger than the requested level, discard it
 				if (level > m_growing_level) {
@@ -2039,6 +2044,7 @@ void GrowingSelection::grow_region() {
 	m_selection_points = m_region_growing.selection_points();
 	m_selection_cell_idx = m_region_growing.selection_cell_idx();
 	m_selection_labels = std::vector<uint8_t>(m_selection_points.size(), 0);
+	m_growing_level = m_region_growing.growing_level();
 
 	m_performed_closing = false;
 }
