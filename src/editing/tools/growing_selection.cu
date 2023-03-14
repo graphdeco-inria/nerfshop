@@ -265,6 +265,9 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 				render_mode = ESelectionRenderMode::RegionGrowing;
 			}
 			ImGui::Combo("Growing Mode", (int*)&(m_region_growing_mode), RegionGrowingModeStr);
+			if (ImGui::Button("Upscale")) {
+				upscale_growing();
+			}
 			ImGui::TreePop();
 		}
 
@@ -631,9 +634,9 @@ bool GrowingSelection::visualize_edit_gui(const Eigen::Matrix<float, 4, 4> &view
 		reset_cage_selection();
 	}
 
-	// if (m_visualize_max_level_cube) {
-	visualize_level_cube(world2proj, m_growing_level);
-	// }
+	if (m_visualize_max_level_cube) {
+		visualize_level_cube(world2proj, m_growing_level);
+	}
 
 	if (!m_plane_dir.isZero())
 	{
@@ -1951,10 +1954,8 @@ void GrowingSelection::project_selection_pixels(const std::vector<Vector2i>& ray
 	if (m_automatic_max_level) {
 		m_growing_level = 0;
 		for (int i = 0; i< ray_counter_host; i++) {
-			uint32_t level = grid_indices_host_tmp[i] / NERF_GRIDVOLUME();
-			std::cout << level << std::endl;
 			if (m_aabb.contains(m_projected_pixels_tmp[i])) {
-				
+				uint32_t level = grid_indices_host_tmp[i] / NERF_GRIDVOLUME();
 
 				// If it's bigger than the requested level, discard it
 				if (level > m_growing_level) {
@@ -2034,6 +2035,16 @@ void GrowingSelection::reset_growing() {
 	m_selection_cell_idx = m_region_growing.selection_cell_idx();
 
 	m_performed_closing = false;
+}
+
+void GrowingSelection::upscale_growing() {
+	m_region_growing.upscale_selection(m_growing_level);
+
+	m_selection_grid_bitfield = m_region_growing.selection_grid_bitfield();
+	m_selection_points = m_region_growing.selection_points();
+	m_selection_cell_idx = m_region_growing.selection_cell_idx();
+	m_selection_labels = std::vector<uint8_t>(m_selection_points.size(), 0);
+	m_growing_level = m_region_growing.growing_level();
 }
 
 void GrowingSelection::grow_region() {

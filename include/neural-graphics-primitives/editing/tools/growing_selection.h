@@ -321,6 +321,8 @@ private:
 
     // Initialize region growing
     void reset_growing();
+    
+    void upscale_growing();
 
     // Grow region (by user-selected steps)
     void grow_region();

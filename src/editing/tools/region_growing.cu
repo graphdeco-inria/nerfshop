@@ -69,7 +69,7 @@ void RegionGrowing::upscale_selection(int current_level) {
     m_selection_points = std::vector<Eigen::Vector3f>();
     for (const auto cell_idx: m_selection_cell_idx) {
         uint32_t new_cell_idx = get_upper_cell_idx(cell_idx, m_growing_level);
-        uint32_t new_pos_idx = new_cell_idx / (NERF_GRIDVOLUME());
+        uint32_t new_pos_idx = new_cell_idx % (NERF_GRIDVOLUME());
         uint32_t x = tcnn::morton3D_invert(new_pos_idx>>0);
         uint32_t y = tcnn::morton3D_invert(new_pos_idx>>1);
         uint32_t z = tcnn::morton3D_invert(new_pos_idx>>2);
@@ -87,7 +87,7 @@ void RegionGrowing::upscale_selection(int current_level) {
         m_growing_queue.pop();
         new_growing_queue.push(get_upper_cell_idx(current_cell, m_growing_level));
     }
-    new_growing_queue = m_growing_queue;
+    m_growing_queue = new_growing_queue;
 }
 
 void RegionGrowing::grow_region(float density_threshold, ERegionGrowingMode region_growing_mode, int growing_level, int growing_steps) {
