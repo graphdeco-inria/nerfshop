@@ -5,8 +5,12 @@ using namespace Eigen;
 
 NGP_NAMESPACE_BEGIN
 
-
-
+bool is_boundary(const uint32_t pos_idx) {
+	uint32_t x = tcnn::morton3D_invert(pos_idx>>0);
+	uint32_t y = tcnn::morton3D_invert(pos_idx>>1);
+	uint32_t z = tcnn::morton3D_invert(pos_idx>>2);
+	return x == 0 || y == 0 || z == 0 || x == NERF_GRIDSIZE()-1 || y == NERF_GRIDSIZE()-1 || z == NERF_GRIDSIZE()-1;
+}
 
 void add_neighbours(std::queue<uint32_t>& growing_queue, const uint32_t x, const uint32_t y, const uint32_t z, const uint32_t level) {
 	if (x > 0) {

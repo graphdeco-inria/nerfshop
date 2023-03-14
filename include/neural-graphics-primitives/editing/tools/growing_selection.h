@@ -146,7 +146,8 @@ struct GrowingSelection {
         const ENerfActivation rgb_activation,
         const ENerfActivation density_activation,
         const Eigen::Vector3f light_dir,
-        const std::string default_envmap_path
+        const std::string default_envmap_path,
+        const uint32_t max_cascade
     );
 
     GrowingSelection(
@@ -160,7 +161,8 @@ struct GrowingSelection {
         const ENerfActivation rgb_activation,
         const ENerfActivation density_activation,
         const Eigen::Vector3f light_dir,
-        const std::string default_envmap_path
+        const std::string default_envmap_path,
+        const uint32_t max_cascade
     );
 
 	void find_plane();
@@ -221,6 +223,7 @@ private:
     int m_pc_render_max_level = NERF_CASCADES();
     bool m_visualize_max_level_cube = false;
     bool m_automatic_max_level = true;
+    uint32_t m_max_cascade;
 
     // Projected pixels
     std::vector<Eigen::Vector3f> m_projected_pixels;
@@ -318,6 +321,8 @@ private:
 
     // Initialize region growing
     void reset_growing();
+    
+    void upscale_growing();
 
     // Grow region (by user-selected steps)
     void grow_region();

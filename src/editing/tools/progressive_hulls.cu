@@ -269,6 +269,7 @@ bool progressive_hulls_quadratic(
     {
         progressive_hulls_quadratic_cost_and_placement(e, V, F, E, EMAP, EF, EI, cost, p, params);
     };
+
     return igl::decimate(
         V,
         F,

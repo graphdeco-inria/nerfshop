@@ -1076,7 +1076,8 @@ void Testbed::imgui() {
 					m_nerf.rgb_activation,
 					m_nerf.density_activation,
 					m_nerf.light_dir,
-					get_filename_in_data_path_with_suffix(m_data_path, "envmap", ".png")
+					get_filename_in_data_path_with_suffix(m_data_path, "envmap", ".png"),
+					m_nerf.max_cascade
 					);
 				m_nerf.tracer.add_edit_operator(cage_deformation);
 			}
@@ -3149,7 +3150,8 @@ void Testbed::load_edits(const std::string& filepath_string) {
 			m_nerf.rgb_activation, 
 			m_nerf.density_activation, 
 			m_nerf.light_dir,
-			get_filename_in_data_path_with_suffix(m_data_path, "envmap", ".png")));
+			get_filename_in_data_path_with_suffix(m_data_path, "envmap", ".png"),
+			m_nerf.max_cascade));
 		} 
 		else {
 			throw std::runtime_error{"Invalid edit operator!"};

@@ -46,6 +46,8 @@ __host__ __device__ bool point_in_tet(const point_t& v1, const point_t& v2, cons
 			same_side_tet<float_t, point_t>(v4, v1, v2, v3, p);  
 }
 
+bool is_boundary(const uint32_t cell_idx);
+
 void add_neighbours(std::queue<uint32_t>& growing_queue, const uint32_t x, const uint32_t y, const uint32_t z, const uint32_t level);
 
 void add_upper_levels(std::queue<uint32_t>& growing_queue, const uint32_t x, const uint32_t y, const uint32_t z, const uint32_t level);
