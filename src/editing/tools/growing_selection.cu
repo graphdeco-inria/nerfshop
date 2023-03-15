@@ -2,6 +2,7 @@
 #include <neural-graphics-primitives/common_device.cuh>
 #include <neural-graphics-primitives/common_nerf.h>
 #include <neural-graphics-primitives/editing/tools/growing_selection.h>
+#include <neural-graphics-primitives/editing/tools/selection_utils.h>
 #include <neural-graphics-primitives/editing/tools/default_mm_operations.h>
 #include <neural-graphics-primitives/editing/tools/correct_mm_operations.h>
 #include <neural-graphics-primitives/editing/tools/sh_utils.h>
@@ -2099,6 +2100,14 @@ void GrowingSelection::extract_fine_mesh() {
 	for (const auto& current_cell : m_selection_cell_idx) {
 		const uint32_t level = current_cell / (NERF_GRIDVOLUME());
 		const uint32_t pos_idx = current_cell % (NERF_GRIDVOLUME());
+
+		// Make sure we don´t have points on the boundary of the bbox
+		// This is a hack because the MC algorithm fails to produce manifold meshes
+		// in this situation...
+		// TODO: replace the default MC algorithm with a more robust one
+		if (is_boundary(pos_idx)) {
+			continue;
+		}
 
 		if (level == m_growing_level) {
 			// uint32_t x = tcnn::morton3D_invert(pos_idx>>0) - voxel_aabb.min.x();
