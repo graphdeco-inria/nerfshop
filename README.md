@@ -40,6 +40,8 @@ This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fun
 For windows, if you have a graphics card in the RTX 2000 or RTX 3000 & 4000 series, you can download the following binaries and execute the `.exe` file corresponding to your device: 
 * [RTX 2000 or RTX 3000 & 4000 series](https://repo-sam.inria.fr/fungraph/nerfshop/binaries-rtx-2000-3000-4000.zip)
 
+**NOTE:** these binaries might not reflect the latest changes on the main branch.
+
 ### Building Requirements
 
 - An __NVIDIA GPU__; tensor cores increase performance when available. All shown results come from an RTX 3090.
