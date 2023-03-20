@@ -37,7 +37,7 @@ This research was funded by the ERC Advanced grant FUNGRAPH No 788065 http://fun
 
 ### Pre-built Binaries for Windows
 
-For windows, if you have a graphics card in the RTX 2000 or RTX 3000 & 4000 series, you can download the following binaries and execute the `.exe` file corresponding to your device: 
+For windows, if you have a graphics card in the RTX 2000 or RTX 3000 & 4000 series, you can download the following binaries and execute the `.exe` file corresponding to your device. The binaries **must be run from the command line** (see below). 
 * [RTX 2000 or RTX 3000 & 4000 series](https://repo-sam.inria.fr/fungraph/nerfshop/binaries-rtx-2000-3000-4000.zip)
 
 **NOTE:** these binaries might not reflect the latest changes on the main branch.
@@ -83,8 +83,6 @@ We recommend building RelWithDebInfo as default. Alternatively, you can build a 
 cmake --build build --config RelWithDebInfo -j
 ```
 
-Run nerfshop from (or ensure that the working directory of the executable is) the cloned repository root.
-
 ### Notes on Linux
 
 If CUDA is not on your PATH, you can modify `~/.bashrc` or `~/.zshrc` (or any other shell configuration with) by adding the following lines:
@@ -94,13 +92,18 @@ export LD_LIBRARY_PATH="/usr/local/cuda-XX.X/lib64:$LD_LIBRARY_PATH"
 ```
 where `XX.X` stands for your CUDA version (e.g., 11.4).
 
-## Scene loading
+## Running from Command Line
 
-As NeRFshop was built directly on top [Instant-NGP](https://nvlabs.github.io/instant-ngp/), pre-processing and loading scenes is done in a similar fashion to the original implementation. Please refer to the corresponding [documentation](https://github.com/NVlabs/instant-ngp/blob/master/docs/nerf_dataset_tips.md#tips-for-training-nerf-models-with-instant-neural-graphics-primitives).
+Run nerfshop from (or ensure that the working directory of the executable is) its root directory. As NeRFshop was built directly on top [Instant-NGP](https://nvlabs.github.io/instant-ngp/), pre-processing and loading scenes is done in a similar fashion to the original implementation. Please refer to the corresponding [documentation](https://github.com/NVlabs/instant-ngp/blob/master/docs/nerf_dataset_tips.md#tips-for-training-nerf-models-with-instant-neural-graphics-primitives) for details.
 
-For example, you can start our *statues* scene with:
+For example, if you followed the build instructions from above you can start our *statues* scene with:
 ```sh
 ./build/nerfshop --scene data/nerfshop_scenes/statues/transforms.json
+```
+
+If you use the pre-built Windows executables instead, you can achieve the same with:
+```sh
+<executable-name> --scene <path to downloaded scenes>/statues/transforms.json
 ```
 
 Additionally, if there is a snapshot available, you can load it with:
