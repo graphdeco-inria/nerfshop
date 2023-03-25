@@ -153,12 +153,12 @@ public:
 
     nlohmann::json to_json() override;
 
+	GrowingSelection m_growing_selection;
 private:
 
     BoundingBox m_scene_aabb;
     BoundingBox m_warped_bbox;
 
-    GrowingSelection m_growing_selection;
     bool m_apply_residuals = true;
     bool m_apply_poisson = false;
     float m_residual_amplitude = 1.0f;

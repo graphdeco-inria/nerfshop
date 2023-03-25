@@ -143,15 +143,14 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 					compute_proxy_mesh();
 					fix_proxy_mesh();
 				}
-
-				if (proxy_cage.vertices.size() > 0) {
-					ImGui::SameLine();
-					if (ImGui::Button("COMPUTE PROXY")) {
-						ImGui::Text("Please wait, computing proxy...");
-						fix_proxy_mesh();
-						update_tet_mesh();
-						interpolate_poisson_boundary();
-					}
+			}
+			if (proxy_cage.vertices.size() > 0) {
+				ImGui::SameLine();
+				if (ImGui::Button("COMPUTE PROXY")) {
+					ImGui::Text("Please wait, computing proxy...");
+					fix_proxy_mesh();
+					update_tet_mesh();
+					interpolate_poisson_boundary();
 				}
 			}
 		} else {
