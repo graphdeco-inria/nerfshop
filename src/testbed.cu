@@ -1082,6 +1082,24 @@ void Testbed::imgui() {
 				m_nerf.tracer.add_edit_operator(cage_deformation);
 			}
 
+			if (ImGui::Button("Basic Box")) {
+				auto cage_deformation = std::make_shared<CageDeformation>(
+					m_aabb,
+					m_training_stream,
+					m_nerf_network,
+					m_nerf.density_grid,
+					m_nerf.density_grid_bitfield,
+					m_nerf.cone_angle_constant,
+					m_nerf.rgb_activation,
+					m_nerf.density_activation,
+					m_nerf.light_dir,
+					get_filename_in_data_path_with_suffix(m_data_path, "envmap", ".png"),
+					m_nerf.max_cascade
+					);
+				cage_deformation->m_growing_selection.m_refine_cage = true;
+				m_nerf.tracer.add_edit_operator(cage_deformation);
+			}
+
 			ImGui::SameLine();
 
 			if (ImGui::Button("Affine Duplication")) {

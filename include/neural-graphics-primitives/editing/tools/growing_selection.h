@@ -188,6 +188,8 @@ struct GrowingSelection {
 
 	void proxy_mesh_from_file(std::string orig_file);
 
+	bool m_refine_cage = false;
+
 private:
 
     // Selection specifics
@@ -216,7 +218,7 @@ private:
     ImGuizmo::MODE m_gizmo_mode = ImGuizmo::LOCAL;
 	ImGuizmo::OPERATION m_gizmo_op = ImGuizmo::TRANSLATE;
 
-    bool m_refine_cage = false;
+
     CageEdition cage_edition = {};
 
     EPcRenderMode m_pc_render_mode = EPcRenderMode::Labels;
