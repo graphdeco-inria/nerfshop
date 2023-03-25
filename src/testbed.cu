@@ -1096,6 +1096,41 @@ void Testbed::imgui() {
 					get_filename_in_data_path_with_suffix(m_data_path, "envmap", ".png"),
 					m_nerf.max_cascade
 					);
+
+				std::vector<point_t> cube_points =
+				{
+					{-1, -1, -1},
+					{-1, -1, 1},
+					{-1, 1, -1},
+					{-1, 1, 1},
+					{1, -1, -1},
+					{1, -1, 1},
+					{1, 1, -1},
+					{1, 1, 1}
+				};
+				std::vector<uint32_t> cube_indices =
+				{
+					// front face
+					0, 1, 2,
+					2, 1, 3,
+					// back face
+					4, 6, 5,
+					5, 6, 7,
+					// left face
+					0, 2, 4,
+					4, 2, 6,
+					// right face
+					1, 5, 3,
+					3, 5, 7,
+					// top face
+					2, 3, 6,
+					6, 3, 7,
+					// bottom face
+					0, 4, 1,
+					1, 4, 5
+				};
+
+				cage_deformation->m_growing_selection.set_proxy_mesh(cube_points, cube_indices);
 				cage_deformation->m_growing_selection.m_refine_cage = true;
 				m_nerf.tracer.add_edit_operator(cage_deformation);
 			}

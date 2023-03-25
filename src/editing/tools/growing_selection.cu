@@ -133,7 +133,7 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 		}
 	}
 
-	bool proxy_allowed = m_selection_points.size() > 0;
+	bool proxy_allowed = true;// m_selection_points.size() > 0;
 	if (proxy_allowed) {
 		if (m_refine_cage) {
 			if (ImGui::Button("EXTRACT CAGE")) {
@@ -949,6 +949,29 @@ void GrowingSelection::select_cage_rect(const Eigen::Matrix<float, 4, 4>& world2
 	}
 }
 
+void GrowingSelection::set_proxy_mesh(std::vector<point_t>& points, std::vector<uint32_t>& indices)
+{
+	render_mode = ESelectionRenderMode::ProxyMesh;
+
+	// Create the associated cage!
+	proxy_cage = Cage<float_t, point_t>(points, indices);
+
+	// DEBUG
+	for (int i = 0; i < proxy_cage.colors.size(); i++) {
+		proxy_cage.colors[i] = Eigen::Vector3f(
+			m_cage_color[0],
+			m_cage_color[1],
+			m_cage_color[2]);
+	}
+
+	// TODO: refine this!
+	// Compute the ideal edge length
+	float bbox_diag_length = proxy_cage.bbox.diag().norm();
+	ideal_tet_edge_length = bbox_diag_length * 1 / 20.0f;
+
+	std::cout << "Computed proxy with " << points.size() << " vertices and " << indices.size() / 3 << " triangles" << std::endl;
+}
+
 void GrowingSelection::compute_proxy_mesh() {
 	// If there is no selection mesh, extract it!
 	if (selection_mesh.vertices.size() == 0) {
@@ -1014,26 +1037,7 @@ void GrowingSelection::compute_proxy_mesh() {
 		new_indices_proxy[3*i+2] = output_F.row(i)(2);
 	}
 	
-
-    render_mode = ESelectionRenderMode::ProxyMesh;
-
-    // Create the associated cage!
-    proxy_cage = Cage<float_t, point_t>(new_vertices_proxy, new_indices_proxy);
-
-    // DEBUG
-    for (int i = 0; i < proxy_cage.colors.size(); i++) {
-        proxy_cage.colors[i] = Eigen::Vector3f(
-            m_cage_color[0],
-            m_cage_color[1],
-            m_cage_color[2]);
-    }
-
-    // TODO: refine this!
-    // Compute the ideal edge length
-    float bbox_diag_length = proxy_cage.bbox.diag().norm();
-    ideal_tet_edge_length = bbox_diag_length * 1/20.0f;   
-
-    std::cout << "Computed proxy with " << n_verts << " vertices and " << n_indices / 3 << " triangles" << std::endl;
+	set_proxy_mesh(new_vertices_proxy, new_indices_proxy);
 }
 
 void GrowingSelection::fix_fine_mesh() {

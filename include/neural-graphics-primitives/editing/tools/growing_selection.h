@@ -190,6 +190,8 @@ struct GrowingSelection {
 
 	bool m_refine_cage = false;
 
+	void set_proxy_mesh(std::vector<point_t>& points, std::vector<uint32_t>& indices);
+
 private:
 
     // Selection specifics
@@ -348,6 +350,8 @@ private:
 
     // Decimate fine mesh with linear bounding constraint
     void compute_proxy_mesh();
+
+
 
     // Not used in practice
     void fix_fine_mesh();
