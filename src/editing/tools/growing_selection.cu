@@ -136,12 +136,14 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 	bool proxy_allowed = true;// m_selection_points.size() > 0;
 	if (proxy_allowed) {
 		if (m_refine_cage) {
-			if (ImGui::Button("EXTRACT CAGE")) {
-				ImGui::Text("Please wait, extracting cage...");
-				compute_proxy_mesh();
-				fix_proxy_mesh();
+			if (m_selection_grid_bitfield.size() > 0)
+			{
+				if (ImGui::Button("EXTRACT CAGE")) {
+					ImGui::Text("Please wait, extracting cage...");
+					compute_proxy_mesh();
+					fix_proxy_mesh();
+				}
 			}
-
 			if (proxy_cage.vertices.size() > 0) {
 				ImGui::SameLine();
 				if (ImGui::Button("COMPUTE PROXY")) {
@@ -152,13 +154,16 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 				}
 			}
 		} else {
-			ImGui::SameLine();
-			// Will extract and clean the proxy directly, then compute the tet mesh and extract it as well
-			if (ImGui::Button("COMPUTE PROXY")) {
-				ImGui::Text("Please wait, computing proxy...");
-				fix_proxy_mesh();
-				update_tet_mesh();
-				interpolate_poisson_boundary();
+			if (m_selection_grid_bitfield.size() > 0)
+			{
+				ImGui::SameLine();
+				// Will extract and clean the proxy directly, then compute the tet mesh and extract it as well
+				if (ImGui::Button("COMPUTE PROXY")) {
+					ImGui::Text("Please wait, computing proxy...");
+					fix_proxy_mesh();
+					update_tet_mesh();
+					interpolate_poisson_boundary();
+				}
 			}
 		}
 	}
@@ -1650,7 +1655,7 @@ void GrowingSelection::draw_gl(
 		selection_mesh.draw_gl(resolution, focal_length, camera_matrix, screen_center);
 	} else if (render_mode == ESelectionRenderMode::ProxyMesh) {
 		proxy_cage.draw_gl(resolution, focal_length, camera_matrix, screen_center);
-	} else if (render_mode == ESelectionRenderMode::TetMesh) {
+	} else if (tet_interpolation_mesh != nullptr && render_mode == ESelectionRenderMode::TetMesh) {
 		tet_interpolation_mesh->draw_gl(resolution, focal_length, camera_matrix, screen_center, display_in_tet);
 	}
 	draw_debug_gl(m_debug_points, m_debug_colors, resolution, focal_length, camera_matrix, screen_center);

@@ -1911,6 +1911,10 @@ void Testbed::draw_contents() {
 		throw std::runtime_error{"Multi-view rendering is only supported when compiling with NGP_GUI."};
 #endif
 	}
+	if (!m_train)
+	{
+		update_density_grid_nerf_render(1, false, m_training_stream);
+	}
 }
 
 void Testbed::init_window(int resw, int resh, bool hidden) {
