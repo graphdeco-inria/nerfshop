@@ -136,19 +136,22 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 	bool proxy_allowed = m_selection_points.size() > 0;
 	if (proxy_allowed) {
 		if (m_refine_cage) {
-			if (ImGui::Button("EXTRACT CAGE")) {
-				ImGui::Text("Please wait, extracting cage...");
-				compute_proxy_mesh();
-				fix_proxy_mesh();
-			}
-
-			if (proxy_cage.vertices.size() > 0) {
-				ImGui::SameLine();
-				if (ImGui::Button("COMPUTE PROXY")) {
-					ImGui::Text("Please wait, computing proxy...");
+			if (m_selection_grid_bitfield.size() > 0)
+			{
+				if (ImGui::Button("EXTRACT CAGE")) {
+					ImGui::Text("Please wait, extracting cage...");
+					compute_proxy_mesh();
 					fix_proxy_mesh();
-					update_tet_mesh();
-					interpolate_poisson_boundary();
+				}
+
+				if (proxy_cage.vertices.size() > 0) {
+					ImGui::SameLine();
+					if (ImGui::Button("COMPUTE PROXY")) {
+						ImGui::Text("Please wait, computing proxy...");
+						fix_proxy_mesh();
+						update_tet_mesh();
+						interpolate_poisson_boundary();
+					}
 				}
 			}
 		} else {
