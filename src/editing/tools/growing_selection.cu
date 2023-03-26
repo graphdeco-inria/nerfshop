@@ -1014,7 +1014,8 @@ void GrowingSelection::compute_proxy_mesh() {
 		}
 		bool success = progressive_hulls_quadratic(input_V, input_F, proxy_size, output_V, output_F, output_J, m_progressive_hulls_params);
 		if (!success) {
-			std::cout << "Failed to compute progressive hulls..." << std::endl;
+			std::cout << "Failed to compute progressive hulls, please try again!" << std::endl;
+			return;
 		}
 	} else if (m_decimation_algorithm == EDecimationAlgorithm::ProgressiveHullsLinear) {
 		if (m_progressive_hulls_params.presimplify) {
@@ -1024,7 +1025,8 @@ void GrowingSelection::compute_proxy_mesh() {
 		}
 		bool success = progressive_hulls_linear(input_V, input_F, proxy_size, output_V, output_F, output_J, m_progressive_hulls_params);
 		if (!success) {
-			std::cout << "Failed to compute progressive hulls..." << std::endl;
+			std::cout << "Failed to compute progressive hulls, please try again!" << std::endl;
+			return;
 		}
 	}
 
