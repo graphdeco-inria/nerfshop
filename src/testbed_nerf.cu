@@ -1532,7 +1532,7 @@ __global__ void generate_extra_training_samples_nerf_distill(
 			t += dt;
 		}
 		else {
-			uint32_t res = NERF_GRIDSIZE() >> mip;
+			uint32_t res = NERF_GRIDSIZE() >> mip_from_dt(dt, pos);
 			t = advance_to_next_voxel(t, cone_angle, pos, ray.d, idir, res);
 		}
 	}
@@ -1611,7 +1611,7 @@ __global__ void generate_extra_training_samples_nerf_distill(
 			t += dt;
 		}
 		else {
-			uint32_t res = NERF_GRIDSIZE() >> mip;
+			uint32_t res = NERF_GRIDSIZE() >> mip_from_dt(dt, pos);
 			t = advance_to_next_voxel(t, cone_angle, pos, ray.d, idir, res);
 		}
 	}
@@ -4063,6 +4063,7 @@ void Testbed::train_nerf_step_distill(uint32_t target_batch_size, uint32_t n_ray
 
 	int check_count;
 	cudaMemcpy(&check_count, to_duplicate, sizeof(int), cudaMemcpyDeviceToHost);
+	check_count = min(check_count, num_aux_rays);
 
 	if (check_count > 0)
 	{

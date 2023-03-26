@@ -462,6 +462,20 @@ void Testbed::imgui() {
 			}
 		}
 		ImGui::SameLine();
+		if (m_train)
+		{
+			imgui_colored_button("Hover to stop", 0.0);
+			if (ImGui::IsItemHovered())
+			{
+				m_train = false;
+				if (m_distill)
+				{
+					m_distill = false;
+					m_nerf.tracer.reset_edit_operators();
+				}
+			}
+		}
+
 		ImGui::Checkbox("Train encoding", &m_train_encoding);
 		ImGui::SameLine();
 		ImGui::Checkbox("Train network", &m_train_network);
@@ -1082,7 +1096,9 @@ void Testbed::imgui() {
 				m_nerf.tracer.add_edit_operator(cage_deformation);
 			}
 
-			if (ImGui::Button("Basic Box")) {
+			ImGui::SameLine();
+
+			if (ImGui::Button("Box Cage")) {
 				auto cage_deformation = std::make_shared<CageDeformation>(
 					m_aabb,
 					m_training_stream,
@@ -1139,7 +1155,7 @@ void Testbed::imgui() {
 
 			ImGui::SameLine();
 
-			if (ImGui::Button("Affine Duplication")) {
+			if (ImGui::Button("Box Duplication")) {
 				AffineBoundingBox selection_zone(m_aabb.center(), m_aabb.diag()[0] / 10.f);
 				Eigen::Vector3f selection_translation(0.0f, m_aabb.diag()[0] / 10.f, 0.0f);
 				auto affine_duplication = std::make_shared<AffineDuplication>(selection_zone, selection_translation, m_aabb);
@@ -1166,36 +1182,36 @@ void Testbed::imgui() {
 			}
 
 			// Edits load/save pipeline
-			// static char edits_filename_buf[128] = "";
-			// if (edits_filename_buf[0] == '\0') {
-			// 	snprintf(edits_filename_buf, sizeof(edits_filename_buf), "%s", get_filename_in_data_path_with_suffix(m_data_path, "edits", ".json").c_str());
-			// }
+			 //static char edits_filename_buf[128] = "";
+			 //if (edits_filename_buf[0] == '\0') {
+			 //	snprintf(edits_filename_buf, sizeof(edits_filename_buf), "%s", get_filename_in_data_path_with_suffix(m_data_path, "edits", ".json").c_str());
+			 //}
 
-			// if (ImGui::Button("Save")) {
-			// 	save_edits(edits_filename_buf);
-			// }
-			// ImGui::SameLine();
-			// static std::string edits_load_error_string = "";
-			// if (ImGui::Button("Load")) {
-			// 	try {
-			// 		load_edits(edits_filename_buf);
-			// 	} catch (std::exception& e) {
-			// 		ImGui::OpenPopup("Edits load error");
-			// 		edits_load_error_string = std::string{"Failed to load edits: "} + e.what();
-			// 	}
-			// 	update_density_grid_nerf_render(10, false, m_training_stream);	
-			// 	reset_accumulation();
-			// }
-			// ImGui::SameLine();
-			// if (ImGui::BeginPopupModal("Edits load error", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-			// 	ImGui::Text("%s", edits_load_error_string.c_str());
-			// 	if (ImGui::Button("OK", ImVec2(120, 0))) {
-			// 		ImGui::CloseCurrentPopup();
-			// 	}
-			// 	ImGui::EndPopup();
-			// }
-			// ImGui::SameLine();
-			// ImGui::InputText("File", edits_filename_buf, sizeof(edits_filename_buf));
+			 //if (ImGui::Button("Save")) {
+			 //	save_edits(edits_filename_buf);
+			 //}
+			 //ImGui::SameLine();
+			 //static std::string edits_load_error_string = "";
+			 //if (ImGui::Button("Load")) {
+			 //	try {
+			 //		load_edits(edits_filename_buf);
+			 //	} catch (std::exception& e) {
+			 //		ImGui::OpenPopup("Edits load error");
+			 //		edits_load_error_string = std::string{"Failed to load edits: "} + e.what();
+			 //	}
+			 //	update_density_grid_nerf_render(10, false, m_training_stream);	
+			 //	reset_accumulation();
+			 //}
+			 //ImGui::SameLine();
+			 //if (ImGui::BeginPopupModal("Edits load error", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+			 //	ImGui::Text("%s", edits_load_error_string.c_str());
+			 //	if (ImGui::Button("OK", ImVec2(120, 0))) {
+			 //		ImGui::CloseCurrentPopup();
+			 //	}
+			 //	ImGui::EndPopup();
+			 //}
+			 //ImGui::SameLine();
+			 //ImGui::InputText("File", edits_filename_buf, sizeof(edits_filename_buf));
 
 			if (m_nerf.tracer.edit_operators().size() > 0) {
 
