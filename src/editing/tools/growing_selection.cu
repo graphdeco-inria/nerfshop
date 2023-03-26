@@ -1195,6 +1195,12 @@ void GrowingSelection::fix_proxy_mesh() {
 	uint32_t n_verts = proxy_cage.vertices.size();
     uint32_t n_indices = proxy_cage.indices.size();
 
+	if (n_verts == 0 || n_indices == 0)
+	{
+		std::cout << "Meshfix had nothing to fix" << std::endl;
+		return;
+	}
+
 	Eigen::MatrixXd input_V(n_verts, 3);
 	Eigen::MatrixXi input_F(n_indices / 3, 3);
 	for (int i = 0; i < n_verts; i++) {
