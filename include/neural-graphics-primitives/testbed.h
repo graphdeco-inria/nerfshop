@@ -811,6 +811,7 @@ public:
 	bool m_snap_to_pixel_centers = false;
 
 	bool m_distill = false;
+	bool m_auto_clean = false;
 
 	// CUDA stuff
 	cudaStream_t m_training_stream;

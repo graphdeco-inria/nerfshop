@@ -1069,12 +1069,13 @@ void Testbed::imgui() {
 		}
 		else
 		{
+			ImGui::Checkbox("Preview Edits", &m_enable_edits);
 			if (imgui_colored_button("Clean Empty Space", 0.4)) {
 				update_density_grid_nerf_render(100, false, m_training_stream);
 				reset_accumulation();
 			}
 			ImGui::SameLine();
-			ImGui::Checkbox("Preview Edits", &m_enable_edits);
+			ImGui::Checkbox("Auto-Clean", &m_auto_clean);
 
 			ImGui::Separator();
 			ImGui::Text("Add operator");
@@ -1927,7 +1928,7 @@ void Testbed::draw_contents() {
 		throw std::runtime_error{"Multi-view rendering is only supported when compiling with NGP_GUI."};
 #endif
 	}
-	if (!m_train)
+	if (!m_train && m_auto_clean)
 	{
 		update_density_grid_nerf_render(1, false, m_training_stream);
 	}
