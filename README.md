@@ -186,13 +186,13 @@ For floaters, you may need a more aggressive *Projection Threshold*. This can be
 
 <img src="docs/assets_tutorial/projection_threshold.gif"/>
 
-Please note that distilling will NOT consider vanished objects! If you need to both deform and remove objects and want to save the result in .ingp format, the suggested workflow is as follows:
+Please note that distilling will NOT consider vanished objects. Also, empty space cleaning can interfer with previously vanished objects. The suggested workflow is as thus follows:
 
-1. Train
-2. Edit
-3. Distill
-4. Vanish
-5. Save
+1. Train NeRF
+2. Edit scene
+3. Clean empty space and/or Distill
+4. Vanish unwanted objects
+5. Save or Export
 
 ### Using multiple edits
 
@@ -202,7 +202,7 @@ NeRFshop supports multiple and composable edits. To do so, simply add new operat
 
 
 ## Guidelines
-* As NeRFshop leverages the occupancy grid introduced by Instant-NGP in order to prune samples along rays, it continually updates the latter as you perform edits. This might result in floating artifacts . To remove them, please press `Clean Empty Space`.
+* As NeRFshop leverages the occupancy grid introduced by Instant-NGP in order to prune samples along rays, it continually updates the latter as you perform edits. This might result in floating artifacts . To remove them, please press `Clean Empty Space`. Alternatively, if your hardware performance permits it, you may also tick the checkbox next to it to have empty space cleaning happen automatically in the background.
 * As Instant-NGP usually struggles with unbounded scenes, we recommend using larger `aabb_scale`.
 * NeRFshop can be more demanding in terms of memory compared to Instant-NGP due to its additional rendering routines and datastructures. As a consequence, if you experience any *OUT OF MEMORY*, try to run the pipeline at a small resolution with for example
 ```sh
