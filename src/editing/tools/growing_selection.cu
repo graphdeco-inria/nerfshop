@@ -116,7 +116,7 @@ GrowingSelection::GrowingSelection(
 	
 }
 
-bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center) {
+bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center, bool& auto_clean) {
     bool grid_edit = false;
 
 	if (ImGui::Button("PROJECT")) {
@@ -190,6 +190,7 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 			//}
 			//cage_edition.selection_barycenter.y() -= 1000;
 			//update_tet_mesh();
+			auto_clean = false;
 		}
 
 		// Guizmo control

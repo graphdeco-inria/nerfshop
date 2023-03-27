@@ -1237,7 +1237,7 @@ void Testbed::imgui() {
 					// Create a new stack ID to support buttons with the same name!
 					ImGui::PushID(i);
 					ImGui::SetNextItemOpen(i == m_nerf.tracer.active_edit_operator());
-					imgui_edit |= edit_operator->imgui(delete_operator, resolution, focal_length, m_smoothed_camera, screen_center);
+					imgui_edit |= edit_operator->imgui(delete_operator, resolution, focal_length, m_smoothed_camera, screen_center, m_auto_clean);
 					// if (i == m_nerf.tracer.active_edit_operator()) {
 					// 	ImGui::PopStyleColor();
 						
@@ -3215,7 +3215,7 @@ void Testbed::load_edits(const std::string& filepath_string) {
 		if (operator_json["type"] == "affine_duplication") {
 			m_nerf.tracer.add_edit_operator(std::make_shared<AffineDuplication>(operator_json, m_aabb));
 		} else if (operator_json["type"] == "twist") {
-			m_nerf.tracer.add_edit_operator(std::make_shared<TwistOperator>(operator_json, m_aabb));
+			// m_nerf.tracer.add_edit_operator(std::make_shared<TwistOperator>(operator_json, m_aabb));
 		} else if (operator_json["type"] == "cage_deformation") {
 			m_nerf.tracer.add_edit_operator(std::make_shared<CageDeformation>(operator_json, m_aabb,
 			m_training_stream, 

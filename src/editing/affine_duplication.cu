@@ -152,7 +152,7 @@ void AffineDuplication::map_positions(cudaStream_t stream, tcnn::PitchedPtr<Nerf
 
 #ifdef NGP_GUI
 
-bool AffineDuplication::imgui(bool& delete_operator, const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center) {
+bool AffineDuplication::imgui(bool& delete_operator, const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center, bool& auto_clean) {
     bool update_transformation = false;
     if (ImGui::CollapsingHeader("Affine Duplication", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Hide original", &m_hide_original);
