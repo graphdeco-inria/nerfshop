@@ -462,6 +462,20 @@ void Testbed::imgui() {
 			}
 		}
 		ImGui::SameLine();
+		if (m_train)
+		{
+			imgui_colored_button("Hover to stop", 0.0);
+			if (ImGui::IsItemHovered())
+			{
+				m_train = false;
+				if (m_distill)
+				{
+					m_distill = false;
+					m_nerf.tracer.reset_edit_operators();
+				}
+			}
+		}
+
 		ImGui::Checkbox("Train encoding", &m_train_encoding);
 		ImGui::SameLine();
 		ImGui::Checkbox("Train network", &m_train_network);
@@ -1055,12 +1069,13 @@ void Testbed::imgui() {
 		}
 		else
 		{
+			ImGui::Checkbox("Preview Edits", &m_enable_edits);
 			if (imgui_colored_button("Clean Empty Space", 0.4)) {
 				update_density_grid_nerf_render(100, false, m_training_stream);
 				reset_accumulation();
 			}
 			ImGui::SameLine();
-			ImGui::Checkbox("Preview Edits", &m_enable_edits);
+			ImGui::Checkbox("Auto-Clean", &m_auto_clean);
 
 			ImGui::Separator();
 			ImGui::Text("Add operator");
@@ -1084,7 +1099,64 @@ void Testbed::imgui() {
 
 			ImGui::SameLine();
 
-			if (ImGui::Button("Affine Duplication")) {
+			if (ImGui::Button("Box Cage")) {
+				auto cage_deformation = std::make_shared<CageDeformation>(
+					m_aabb,
+					m_training_stream,
+					m_nerf_network,
+					m_nerf.density_grid,
+					m_nerf.density_grid_bitfield,
+					m_nerf.cone_angle_constant,
+					m_nerf.rgb_activation,
+					m_nerf.density_activation,
+					m_nerf.light_dir,
+					get_filename_in_data_path_with_suffix(m_data_path, "envmap", ".png"),
+					m_nerf.max_cascade
+					);
+
+
+				std::vector<point_t> cube_points =
+				{
+					{0.25, 0.25, 0.25},
+					{0.25, 0.25, 0.75},
+					{0.25, 0.75, 0.25},
+					{0.25, 0.75, 0.75},
+					{0.75, 0.25, 0.25},
+					{0.75, 0.25, 0.75},
+					{0.75, 0.75, 0.25},
+					{0.75, 0.75, 0.75}
+				};
+
+				std::vector<uint32_t> cube_indices =
+				{
+					// front face
+					0, 1, 2,
+					2, 1, 3,
+					// back face
+					4, 6, 5,
+					5, 6, 7,
+					// left face
+					0, 2, 4,
+					4, 2, 6,
+					// right face
+					1, 5, 3,
+					3, 5, 7,
+					// top face
+					2, 3, 6,
+					6, 3, 7,
+					// bottom face
+					0, 4, 1,
+					1, 4, 5
+				};
+
+				cage_deformation->m_growing_selection.set_proxy_mesh(cube_points, cube_indices);
+				cage_deformation->m_growing_selection.m_refine_cage = true;
+				m_nerf.tracer.add_edit_operator(cage_deformation);
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Box Duplication")) {
 				AffineBoundingBox selection_zone(m_aabb.center(), m_aabb.diag()[0] / 10.f);
 				Eigen::Vector3f selection_translation(0.0f, m_aabb.diag()[0] / 10.f, 0.0f);
 				auto affine_duplication = std::make_shared<AffineDuplication>(selection_zone, selection_translation, m_aabb);
@@ -1111,36 +1183,36 @@ void Testbed::imgui() {
 			}
 
 			// Edits load/save pipeline
-			// static char edits_filename_buf[128] = "";
-			// if (edits_filename_buf[0] == '\0') {
-			// 	snprintf(edits_filename_buf, sizeof(edits_filename_buf), "%s", get_filename_in_data_path_with_suffix(m_data_path, "edits", ".json").c_str());
-			// }
+			 //static char edits_filename_buf[128] = "";
+			 //if (edits_filename_buf[0] == '\0') {
+			 //	snprintf(edits_filename_buf, sizeof(edits_filename_buf), "%s", get_filename_in_data_path_with_suffix(m_data_path, "edits", ".json").c_str());
+			 //}
 
-			// if (ImGui::Button("Save")) {
-			// 	save_edits(edits_filename_buf);
-			// }
-			// ImGui::SameLine();
-			// static std::string edits_load_error_string = "";
-			// if (ImGui::Button("Load")) {
-			// 	try {
-			// 		load_edits(edits_filename_buf);
-			// 	} catch (std::exception& e) {
-			// 		ImGui::OpenPopup("Edits load error");
-			// 		edits_load_error_string = std::string{"Failed to load edits: "} + e.what();
-			// 	}
-			// 	update_density_grid_nerf_render(10, false, m_training_stream);	
-			// 	reset_accumulation();
-			// }
-			// ImGui::SameLine();
-			// if (ImGui::BeginPopupModal("Edits load error", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-			// 	ImGui::Text("%s", edits_load_error_string.c_str());
-			// 	if (ImGui::Button("OK", ImVec2(120, 0))) {
-			// 		ImGui::CloseCurrentPopup();
-			// 	}
-			// 	ImGui::EndPopup();
-			// }
-			// ImGui::SameLine();
-			// ImGui::InputText("File", edits_filename_buf, sizeof(edits_filename_buf));
+			 //if (ImGui::Button("Save")) {
+			 //	save_edits(edits_filename_buf);
+			 //}
+			 //ImGui::SameLine();
+			 //static std::string edits_load_error_string = "";
+			 //if (ImGui::Button("Load")) {
+			 //	try {
+			 //		load_edits(edits_filename_buf);
+			 //	} catch (std::exception& e) {
+			 //		ImGui::OpenPopup("Edits load error");
+			 //		edits_load_error_string = std::string{"Failed to load edits: "} + e.what();
+			 //	}
+			 //	update_density_grid_nerf_render(10, false, m_training_stream);	
+			 //	reset_accumulation();
+			 //}
+			 //ImGui::SameLine();
+			 //if (ImGui::BeginPopupModal("Edits load error", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+			 //	ImGui::Text("%s", edits_load_error_string.c_str());
+			 //	if (ImGui::Button("OK", ImVec2(120, 0))) {
+			 //		ImGui::CloseCurrentPopup();
+			 //	}
+			 //	ImGui::EndPopup();
+			 //}
+			 //ImGui::SameLine();
+			 //ImGui::InputText("File", edits_filename_buf, sizeof(edits_filename_buf));
 
 			if (m_nerf.tracer.edit_operators().size() > 0) {
 
@@ -1165,7 +1237,7 @@ void Testbed::imgui() {
 					// Create a new stack ID to support buttons with the same name!
 					ImGui::PushID(i);
 					ImGui::SetNextItemOpen(i == m_nerf.tracer.active_edit_operator());
-					imgui_edit |= edit_operator->imgui(delete_operator, resolution, focal_length, m_smoothed_camera, screen_center);
+					imgui_edit |= edit_operator->imgui(delete_operator, resolution, focal_length, m_smoothed_camera, screen_center, m_auto_clean);
 					// if (i == m_nerf.tracer.active_edit_operator()) {
 					// 	ImGui::PopStyleColor();
 						
@@ -1855,6 +1927,10 @@ void Testbed::draw_contents() {
 #else
 		throw std::runtime_error{"Multi-view rendering is only supported when compiling with NGP_GUI."};
 #endif
+	}
+	if (!m_train && m_auto_clean)
+	{
+		update_density_grid_nerf_render(1, false, m_training_stream);
 	}
 }
 
@@ -3139,7 +3215,7 @@ void Testbed::load_edits(const std::string& filepath_string) {
 		if (operator_json["type"] == "affine_duplication") {
 			m_nerf.tracer.add_edit_operator(std::make_shared<AffineDuplication>(operator_json, m_aabb));
 		} else if (operator_json["type"] == "twist") {
-			m_nerf.tracer.add_edit_operator(std::make_shared<TwistOperator>(operator_json, m_aabb));
+			// m_nerf.tracer.add_edit_operator(std::make_shared<TwistOperator>(operator_json, m_aabb));
 		} else if (operator_json["type"] == "cage_deformation") {
 			m_nerf.tracer.add_edit_operator(std::make_shared<CageDeformation>(operator_json, m_aabb,
 			m_training_stream, 

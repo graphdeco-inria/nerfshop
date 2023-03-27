@@ -27,7 +27,7 @@ public:
 
 	virtual ~EditOperator() { }
 
-    virtual bool imgui(bool& delete_operator, const Eigen::Vector2i& resolution, const Eigen::Vector2f& focal_length,  const Eigen::Matrix<float, 3, 4>& camera_matrix, const Eigen::Vector2f& screen_center) = 0;
+    virtual bool imgui(bool& delete_operator, const Eigen::Vector2i& resolution, const Eigen::Vector2f& focal_length,  const Eigen::Matrix<float, 3, 4>& camera_matrix, const Eigen::Vector2f& screen_center, bool& auto_clean) = 0;
 
     virtual bool visualize_edit_gui(const Eigen::Matrix<float, 4, 4> &view2proj, const Eigen::Matrix<float, 4, 4> &world2proj, const Eigen::Matrix<float, 4, 4> &world2view, const Eigen::Vector2f& focal, float aspect, float time) = 0;
 

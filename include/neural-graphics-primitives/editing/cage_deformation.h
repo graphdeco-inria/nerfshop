@@ -137,7 +137,7 @@ public:
 
 #ifdef NGP_GUI
 
-    bool imgui(bool& delete_operator, const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center) override;
+    bool imgui(bool& delete_operator, const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center, bool& auto_clean) override;
 
     bool handle_keyboard() override;
 
@@ -153,12 +153,12 @@ public:
 
     nlohmann::json to_json() override;
 
+	GrowingSelection m_growing_selection;
 private:
 
     BoundingBox m_scene_aabb;
     BoundingBox m_warped_bbox;
 
-    GrowingSelection m_growing_selection;
     bool m_apply_residuals = true;
     bool m_apply_poisson = false;
     float m_residual_amplitude = 1.0f;

@@ -116,7 +116,7 @@ GrowingSelection::GrowingSelection(
 	
 }
 
-bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center) {
+bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center, bool& auto_clean) {
     bool grid_edit = false;
 
 	if (ImGui::Button("PROJECT")) {
@@ -133,15 +133,17 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 		}
 	}
 
-	bool proxy_allowed = m_selection_points.size() > 0;
+	bool proxy_allowed = true;// m_selection_points.size() > 0;
 	if (proxy_allowed) {
 		if (m_refine_cage) {
-			if (ImGui::Button("EXTRACT CAGE")) {
-				ImGui::Text("Please wait, extracting cage...");
-				compute_proxy_mesh();
-				fix_proxy_mesh();
+			if (m_selection_grid_bitfield.size() > 0)
+			{
+				if (ImGui::Button("EXTRACT CAGE")) {
+					ImGui::Text("Please wait, extracting cage...");
+					compute_proxy_mesh();
+					fix_proxy_mesh();
+				}
 			}
-
 			if (proxy_cage.vertices.size() > 0) {
 				ImGui::SameLine();
 				if (ImGui::Button("COMPUTE PROXY")) {
@@ -152,13 +154,16 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 				}
 			}
 		} else {
-			ImGui::SameLine();
-			// Will extract and clean the proxy directly, then compute the tet mesh and extract it as well
-			if (ImGui::Button("COMPUTE PROXY")) {
-				ImGui::Text("Please wait, computing proxy...");
-				fix_proxy_mesh();
-				update_tet_mesh();
-				interpolate_poisson_boundary();
+			if (m_selection_grid_bitfield.size() > 0)
+			{
+				ImGui::SameLine();
+				// Will extract and clean the proxy directly, then compute the tet mesh and extract it as well
+				if (ImGui::Button("COMPUTE PROXY")) {
+					ImGui::Text("Please wait, computing proxy...");
+					fix_proxy_mesh();
+					update_tet_mesh();
+					interpolate_poisson_boundary();
+				}
 			}
 		}
 	}
@@ -185,6 +190,7 @@ bool GrowingSelection::imgui(const Vector2i& resolution, const Vector2f& focal_l
 			//}
 			//cage_edition.selection_barycenter.y() -= 1000;
 			//update_tet_mesh();
+			auto_clean = false;
 		}
 
 		// Guizmo control
@@ -949,6 +955,29 @@ void GrowingSelection::select_cage_rect(const Eigen::Matrix<float, 4, 4>& world2
 	}
 }
 
+void GrowingSelection::set_proxy_mesh(std::vector<point_t>& points, std::vector<uint32_t>& indices)
+{
+	render_mode = ESelectionRenderMode::ProxyMesh;
+
+	// Create the associated cage!
+	proxy_cage = Cage<float_t, point_t>(points, indices);
+
+	// DEBUG
+	for (int i = 0; i < proxy_cage.colors.size(); i++) {
+		proxy_cage.colors[i] = Eigen::Vector3f(
+			m_cage_color[0],
+			m_cage_color[1],
+			m_cage_color[2]);
+	}
+
+	// TODO: refine this!
+	// Compute the ideal edge length
+	float bbox_diag_length = proxy_cage.bbox.diag().norm();
+	ideal_tet_edge_length = bbox_diag_length * 1 / 20.0f;
+
+	std::cout << "Computed proxy with " << points.size() << " vertices and " << indices.size() / 3 << " triangles" << std::endl;
+}
+
 void GrowingSelection::compute_proxy_mesh() {
 	// If there is no selection mesh, extract it!
 	if (selection_mesh.vertices.size() == 0) {
@@ -986,7 +1015,8 @@ void GrowingSelection::compute_proxy_mesh() {
 		}
 		bool success = progressive_hulls_quadratic(input_V, input_F, proxy_size, output_V, output_F, output_J, m_progressive_hulls_params);
 		if (!success) {
-			std::cout << "Failed to compute progressive hulls..." << std::endl;
+			std::cout << "Failed to compute progressive hulls, please try again!" << std::endl;
+			return;
 		}
 	} else if (m_decimation_algorithm == EDecimationAlgorithm::ProgressiveHullsLinear) {
 		if (m_progressive_hulls_params.presimplify) {
@@ -996,7 +1026,8 @@ void GrowingSelection::compute_proxy_mesh() {
 		}
 		bool success = progressive_hulls_linear(input_V, input_F, proxy_size, output_V, output_F, output_J, m_progressive_hulls_params);
 		if (!success) {
-			std::cout << "Failed to compute progressive hulls..." << std::endl;
+			std::cout << "Failed to compute progressive hulls, please try again!" << std::endl;
+			return;
 		}
 	}
 
@@ -1014,26 +1045,7 @@ void GrowingSelection::compute_proxy_mesh() {
 		new_indices_proxy[3*i+2] = output_F.row(i)(2);
 	}
 	
-
-    render_mode = ESelectionRenderMode::ProxyMesh;
-
-    // Create the associated cage!
-    proxy_cage = Cage<float_t, point_t>(new_vertices_proxy, new_indices_proxy);
-
-    // DEBUG
-    for (int i = 0; i < proxy_cage.colors.size(); i++) {
-        proxy_cage.colors[i] = Eigen::Vector3f(
-            m_cage_color[0],
-            m_cage_color[1],
-            m_cage_color[2]);
-    }
-
-    // TODO: refine this!
-    // Compute the ideal edge length
-    float bbox_diag_length = proxy_cage.bbox.diag().norm();
-    ideal_tet_edge_length = bbox_diag_length * 1/20.0f;   
-
-    std::cout << "Computed proxy with " << n_verts << " vertices and " << n_indices / 3 << " triangles" << std::endl;
+	set_proxy_mesh(new_vertices_proxy, new_indices_proxy);
 }
 
 void GrowingSelection::fix_fine_mesh() {
@@ -1183,6 +1195,12 @@ void GrowingSelection::fix_proxy_mesh() {
 
 	uint32_t n_verts = proxy_cage.vertices.size();
     uint32_t n_indices = proxy_cage.indices.size();
+
+	if (n_verts == 0 || n_indices == 0)
+	{
+		std::cout << "Meshfix had nothing to fix" << std::endl;
+		return;
+	}
 
 	Eigen::MatrixXd input_V(n_verts, 3);
 	Eigen::MatrixXi input_F(n_indices / 3, 3);
@@ -1646,7 +1664,7 @@ void GrowingSelection::draw_gl(
 		selection_mesh.draw_gl(resolution, focal_length, camera_matrix, screen_center);
 	} else if (render_mode == ESelectionRenderMode::ProxyMesh) {
 		proxy_cage.draw_gl(resolution, focal_length, camera_matrix, screen_center);
-	} else if (render_mode == ESelectionRenderMode::TetMesh) {
+	} else if (tet_interpolation_mesh != nullptr && render_mode == ESelectionRenderMode::TetMesh) {
 		tet_interpolation_mesh->draw_gl(resolution, focal_length, camera_matrix, screen_center, display_in_tet);
 	}
 	draw_debug_gl(m_debug_points, m_debug_colors, resolution, focal_length, camera_matrix, screen_center);

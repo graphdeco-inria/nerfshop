@@ -167,7 +167,7 @@ struct GrowingSelection {
 
 	void find_plane();
 
-	bool imgui(const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center);
+	bool imgui(const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center, bool& auto_clean);
 
     bool visualize_edit_gui(const Eigen::Matrix<float, 4, 4> &view2proj, const Eigen::Matrix<float, 4, 4> &world2proj, const Eigen::Matrix<float, 4, 4> &world2view, const Eigen::Vector2f& focal, float aspect, float time);
 
@@ -187,6 +187,10 @@ struct GrowingSelection {
 	void deform_proxy_from_file(std::string deformed_file);
 
 	void proxy_mesh_from_file(std::string orig_file);
+
+	bool m_refine_cage = false;
+
+	void set_proxy_mesh(std::vector<point_t>& points, std::vector<uint32_t>& indices);
 
 private:
 
@@ -216,7 +220,7 @@ private:
     ImGuizmo::MODE m_gizmo_mode = ImGuizmo::LOCAL;
 	ImGuizmo::OPERATION m_gizmo_op = ImGuizmo::TRANSLATE;
 
-    bool m_refine_cage = false;
+
     CageEdition cage_edition = {};
 
     EPcRenderMode m_pc_render_mode = EPcRenderMode::Labels;
@@ -346,6 +350,8 @@ private:
 
     // Decimate fine mesh with linear bounding constraint
     void compute_proxy_mesh();
+
+
 
     // Not used in practice
     void fix_fine_mesh();

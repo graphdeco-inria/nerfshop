@@ -718,11 +718,11 @@ void CageDeformation::compute_poisson_full_residuals(
 
 #ifdef NGP_GUI
 
-bool CageDeformation::imgui(bool& delete_operator, const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center) {
+bool CageDeformation::imgui(bool& delete_operator, const Vector2i& resolution, const Vector2f& focal_length,  const Matrix<float, 3, 4>& camera_matrix, const Vector2f& screen_center, bool& auto_clean) {
     bool update_transformation = false;
     if (ImGui::CollapsingHeader("Cage Deformation", ImGuiTreeNodeFlags_DefaultOpen)) {
        
-        update_transformation |= m_growing_selection.imgui(resolution, focal_length, camera_matrix, screen_center);
+        update_transformation |= m_growing_selection.imgui(resolution, focal_length, camera_matrix, screen_center, auto_clean);
 
         if (m_growing_selection.tet_interpolation_mesh) {
             //update_transformation |= ImGui::Checkbox("Apply residuals", &m_apply_residuals);
